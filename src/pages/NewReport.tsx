@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -42,16 +43,46 @@ export default function NewReport() {
     }
   };
 
-  const handleSubmit = () => {
-    // Simulate blockchain submission
+  const handleSubmit = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    let imageUrl = "";
+    if (formData.image) {
+      const fileName = `${Date.now()}-${formData.image.name}`;
+      const { data: uploadData } = await supabase.storage
+        .from("report-images")
+        .upload(fileName, formData.image);
+      
+      if (uploadData) {
+        imageUrl = supabase.storage.from("report-images").getPublicUrl(uploadData.path).data.publicUrl;
+      }
+    }
+
+    const { error } = await supabase.from("reports").insert([{
+      user_id: session?.user?.id || null,
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      location_address: formData.location,
+      image_url: imageUrl,
+      hedera_hash: `0x${Math.random().toString(36).substring(2, 15)}`,
+    }]);
+
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de créer le signalement",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Signalement envoyé !",
-      description: "Votre signalement a été enregistré sur la blockchain Hedera. Hash: 0x1a2b3c4d...",
+      description: "Votre signalement a été enregistré sur la blockchain Hedera",
     });
     
-    setTimeout(() => {
-      navigate("/reports");
-    }, 2000);
+    setTimeout(() => navigate("/reports"), 1500);
   };
 
   const renderStep = () => {

@@ -1,14 +1,54 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Globe, User, LogIn } from "lucide-react";
+import { Menu, Globe, User, LogIn, LogOut, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import streetbiLogo from "@/assets/streetbi-logo.jpg";
 
 export const Header = () => {
   const [language, setLanguage] = useState("fr");
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (data) {
+      setProfile(data);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const languages = [
     { value: "fr", label: "Français" },
@@ -20,10 +60,10 @@ export const Header = () => {
 
   const navigation = [
     { name: "Accueil", href: "/" },
-    { name: "Carte", href: "/map" },
     { name: "Signalements", href: "/reports" },
-    { name: "Contact", href: "/contact" },
   ];
+
+  const isAuthority = profile?.role === "autorite" || profile?.role === "admin";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -66,14 +106,35 @@ export const Header = () => {
 
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center space-x-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>
-              <LogIn className="h-4 w-4 mr-2" />
-              Connexion
-            </Button>
-            <Button size="sm" onClick={() => navigate("/register")}>
-              <User className="h-4 w-4 mr-2" />
-              Inscription
-            </Button>
+            {user ? (
+              <>
+                {isAuthority && (
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+                    <LayoutDashboard className="h-4 w-4 mr-2" />
+                    Dashboard
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
+                  <User className="h-4 w-4 mr-2" />
+                  Mon Profil
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Déconnexion
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")}>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Connexion
+                </Button>
+                <Button size="sm" onClick={() => navigate("/auth")}>
+                  <User className="h-4 w-4 mr-2" />
+                  Inscription
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}
@@ -95,14 +156,35 @@ export const Header = () => {
                   </button>
                 ))}
                 <div className="border-t pt-4 space-y-2">
-                  <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/login")}>
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Connexion
-                  </Button>
-                  <Button className="w-full justify-start" onClick={() => navigate("/register")}>
-                    <User className="h-4 w-4 mr-2" />
-                    Inscription
-                  </Button>
+                  {user ? (
+                    <>
+                      {isAuthority && (
+                        <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/dashboard")}>
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      )}
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/profile")}>
+                        <User className="h-4 w-4 mr-2" />
+                        Mon Profil
+                      </Button>
+                      <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Déconnexion
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/auth")}>
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Connexion
+                      </Button>
+                      <Button className="w-full justify-start" onClick={() => navigate("/auth")}>
+                        <User className="h-4 w-4 mr-2" />
+                        Inscription
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>

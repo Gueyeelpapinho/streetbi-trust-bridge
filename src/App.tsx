@@ -7,6 +7,13 @@ import Index from "./pages/Index";
 import NewReport from "./pages/NewReport";
 import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
+import ReportDetail from "./pages/ReportDetail";
+import Settings from "./pages/Settings";
+import Dashboard from "./pages/Dashboard";
+import DashboardReports from "./pages/DashboardReports";
+import DashboardReportDetail from "./pages/DashboardReportDetail";
+import DashboardAnalytics from "./pages/DashboardAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -21,12 +28,14 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/new-report" element={<NewReport />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/:id" element={<ReportDetail />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/map" element={<Index />} />
-          <Route path="/contact" element={<Index />} />
-          <Route path="/login" element={<Index />} />
-          <Route path="/register" element={<Index />} />
-          <Route path="/report/:id" element={<Reports />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/reports" element={<DashboardReports />} />
+          <Route path="/dashboard/reports/:id" element={<DashboardReportDetail />} />
+          <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -6,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Award, TrendingUp, Gift, HelpCircle, Settings, MapPin, Clock, CheckCircle } from "lucide-react";
+import { User, Award, Gift, HelpCircle, Settings, Clock, CheckCircle } from "lucide-react";
 
 const userStats = {
   name: "Amadou Diop",
@@ -83,7 +86,46 @@ const statusColors = {
 };
 
 export default function Profile() {
-  const progressToNextLevel = (userStats.werTokens / userStats.nextLevel) * 100;
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+
+    if (data) {
+      setProfile(data);
+    }
+    setLoading(false);
+  };
+
+  if (loading || !profile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container py-8">
+          <p className="text-center">Chargement...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const progressToNextLevel = (profile.wer_tokens / 500) * 100;
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,15 +155,10 @@ export default function Profile() {
                     </Avatar>
                     
                     <div>
-                      <h3 className="text-xl font-semibold">{userStats.name}</h3>
-                      <p className="text-muted-foreground">{userStats.email}</p>
+                      <h3 className="text-xl font-semibold">{profile.full_name || "Utilisateur"}</h3>
                       <Badge variant="secondary" className="mt-2">
-                        {userStats.level}
+                        Citoyen Actif
                       </Badge>
-                    </div>
-                    
-                    <div className="text-sm text-muted-foreground">
-                      Membre depuis {userStats.joinDate}
                     </div>
                   </div>
                 </CardContent>
@@ -137,14 +174,14 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-reward">{userStats.werTokens}</div>
+                    <div className="text-3xl font-bold text-reward">{profile.wer_tokens}</div>
                     <div className="text-sm text-muted-foreground">Tokens disponibles</div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Progression vers le niveau suivant</span>
-                      <span>{userStats.werTokens}/{userStats.nextLevel}</span>
+                      <span>{profile.wer_tokens}/500</span>
                     </div>
                     <Progress value={progressToNextLevel} className="h-2" />
                   </div>
@@ -161,11 +198,11 @@ export default function Profile() {
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                      <div className="text-2xl font-bold text-primary">{userStats.totalReports}</div>
+                      <div className="text-2xl font-bold text-primary">{profile.reports_submitted}</div>
                       <div className="text-xs text-muted-foreground">Signalements</div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-success">{userStats.resolvedReports}</div>
+                      <div className="text-2xl font-bold text-success">{profile.problems_resolved}</div>
                       <div className="text-xs text-muted-foreground">Résolus</div>
                     </div>
                   </div>
@@ -258,8 +295,8 @@ export default function Profile() {
                         <Settings className="h-4 w-4 mr-2" />
                         Préférences de notification
                       </Button>
-                      <Button variant="outline" className="w-full">
-                        Changer de mot de passe
+                      <Button variant="outline" className="w-full" onClick={() => navigate("/settings")}>
+                        Paramètres de langue
                       </Button>
                     </CardContent>
                   </Card>
