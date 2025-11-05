@@ -14,7 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          problems_resolved: number | null
+          reports_submitted: number | null
+          role: Database["public"]["Enums"]["user_role"] | null
+          updated_at: string | null
+          wer_tokens: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          problems_resolved?: number | null
+          reports_submitted?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          wer_tokens?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          problems_resolved?: number | null
+          reports_submitted?: number | null
+          role?: Database["public"]["Enums"]["user_role"] | null
+          updated_at?: string | null
+          wer_tokens?: number | null
+        }
+        Relationships: []
+      }
+      report_updates: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          is_public: boolean | null
+          report_id: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          report_id?: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          is_public?: boolean | null
+          report_id?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_updates_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          assigned_agent: string | null
+          category: Database["public"]["Enums"]["report_category"]
+          created_at: string | null
+          description: string
+          hedera_hash: string | null
+          id: string
+          image_url: string | null
+          latitude: number | null
+          location_address: string
+          longitude: number | null
+          resolution_cost: number | null
+          resolution_note: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["report_status"] | null
+          title: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_agent?: string | null
+          category: Database["public"]["Enums"]["report_category"]
+          created_at?: string | null
+          description: string
+          hedera_hash?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          location_address: string
+          longitude?: number | null
+          resolution_cost?: number | null
+          resolution_note?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+          title: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_agent?: string | null
+          category?: Database["public"]["Enums"]["report_category"]
+          created_at?: string | null
+          description?: string
+          hedera_hash?: string | null
+          id?: string
+          image_url?: string | null
+          latitude?: number | null
+          location_address?: string
+          longitude?: number | null
+          resolution_cost?: number | null
+          resolution_note?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +156,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      report_category:
+        | "eau"
+        | "voirie"
+        | "eclairage"
+        | "sante"
+        | "education"
+        | "environnement"
+        | "securite"
+        | "autre"
+      report_status: "signale" | "en_cours" | "resolu"
+      user_role: "citoyen" | "autorite" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +293,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      report_category: [
+        "eau",
+        "voirie",
+        "eclairage",
+        "sante",
+        "education",
+        "environnement",
+        "securite",
+        "autre",
+      ],
+      report_status: ["signale", "en_cours", "resolu"],
+      user_role: ["citoyen", "autorite", "admin"],
+    },
   },
 } as const
