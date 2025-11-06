@@ -99,7 +99,7 @@ const mockReports = [
     status: "signale",
     location_address: "Quartier Parcelles Assainies, Dakar",
     latitude: 14.6650,
-    longitude: -17.4500,
+    longitude: -17.4400,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
