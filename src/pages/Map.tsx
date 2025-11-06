@@ -42,10 +42,10 @@ const statusLabels = {
   resolu: "Résolu",
 };
 
-// Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements
-const DAKAR_CENTER: [number, number] = [14.7025, -17.4525];
+// Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements (Dakar + banlieues)
+const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
 
-// Signalements simulés réalistes pour Dakar - Coordonnées espacées pour une meilleure visualisation
+// Signalements simulés réalistes pour Dakar - Coordonnées ajustées pour éviter l'océan (longitude entre -17.43 et -17.46)
 const mockReports = [
   {
     id: "mock-1",
@@ -55,7 +55,7 @@ const mockReports = [
     status: "signale",
     location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
     latitude: 14.6800,
-    longitude: -17.4600,
+    longitude: -17.4550,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -66,7 +66,7 @@ const mockReports = [
     status: "en_cours",
     location_address: "Rue de la République, Médina, Dakar",
     latitude: 14.6950,
-    longitude: -17.4550,
+    longitude: -17.4500,
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -77,7 +77,7 @@ const mockReports = [
     status: "signale",
     location_address: "Boulevard Général de Gaulle, Fann, Dakar",
     latitude: 14.7100,
-    longitude: -17.4700,
+    longitude: -17.4450,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -88,7 +88,7 @@ const mockReports = [
     status: "en_cours",
     location_address: "École primaire de Grand Yoff, Dakar",
     latitude: 14.7250,
-    longitude: -17.4450,
+    longitude: -17.4420,
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -99,7 +99,7 @@ const mockReports = [
     status: "signale",
     location_address: "Quartier Parcelles Assainies, Dakar",
     latitude: 14.6650,
-    longitude: -17.4650,
+    longitude: -17.4500,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -110,7 +110,7 @@ const mockReports = [
     status: "signale",
     location_address: "Carrefour Liberté 6, Dakar",
     latitude: 14.7000,
-    longitude: -17.4500,
+    longitude: -17.4470,
     created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -121,7 +121,7 @@ const mockReports = [
     status: "resolu",
     location_address: "Avenue Blaise Diagne, Almadies, Dakar",
     latitude: 14.7400,
-    longitude: -17.4300,
+    longitude: -17.4320,
     created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -132,7 +132,7 @@ const mockReports = [
     status: "resolu",
     location_address: "Rue Mermoz, Point E, Dakar",
     latitude: 14.7150,
-    longitude: -17.4350,
+    longitude: -17.4380,
     created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -143,7 +143,7 @@ const mockReports = [
     status: "resolu",
     location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
     latitude: 14.7300,
-    longitude: -17.4400,
+    longitude: -17.4350,
     created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -154,7 +154,7 @@ const mockReports = [
     status: "en_cours",
     location_address: "Centre de santé de Pikine, Dakar",
     latitude: 14.6750,
-    longitude: -17.4750,
+    longitude: -17.4520,
     created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -165,7 +165,7 @@ const mockReports = [
     status: "signale",
     location_address: "Marché Sandaga, Centre-ville, Dakar",
     latitude: 14.6900,
-    longitude: -17.4400,
+    longitude: -17.4430,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -176,8 +176,74 @@ const mockReports = [
     status: "en_cours",
     location_address: "Avenue Faidherbe, Plateau, Dakar",
     latitude: 14.7050,
-    longitude: -17.4550,
+    longitude: -17.4480,
     created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-13",
+    title: "Route dégradée - Diamniadio",
+    description: "Route principale en mauvais état avec plusieurs nids-de-poule. Circulation difficile et dangereuse.",
+    category: "voirie",
+    status: "signale",
+    location_address: "Avenue de l'Indépendance, Diamniadio",
+    latitude: 14.7500,
+    longitude: -17.4000,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-14",
+    title: "Éclairage public manquant",
+    description: "Absence totale d'éclairage public dans cette zone résidentielle. Sécurité des habitants compromise.",
+    category: "eclairage",
+    status: "en_cours",
+    location_address: "Zone résidentielle, Diamniadio",
+    latitude: 14.7600,
+    longitude: -17.3950,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-15",
+    title: "Problème d'assainissement",
+    description: "Système d'assainissement défaillant causant des inondations lors des pluies. Risque sanitaire élevé.",
+    category: "eau",
+    status: "signale",
+    location_address: "Quartier Pikine Est, Pikine",
+    latitude: 14.7500,
+    longitude: -17.3800,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-16",
+    title: "École sans électricité",
+    description: "École primaire sans électricité depuis une semaine. Impact sur l'éducation des enfants.",
+    category: "education",
+    status: "en_cours",
+    location_address: "École primaire de Thiaroye, Thiaroye",
+    latitude: 14.7200,
+    longitude: -17.3600,
+    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-17",
+    title: "Décharge sauvage",
+    description: "Décharge sauvage non autorisée causant des problèmes environnementaux et sanitaires.",
+    category: "environnement",
+    status: "signale",
+    location_address: "Zone industrielle, Rufisque",
+    latitude: 14.7100,
+    longitude: -17.2700,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-18",
+    title: "Route réparée - Diamniadio",
+    description: "Route principale récemment réparée. Circulation fluide et sécurisée.",
+    category: "voirie",
+    status: "resolu",
+    location_address: "Boulevard de Diamniadio, Diamniadio",
+    latitude: 14.7550,
+    longitude: -17.4050,
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
 
@@ -314,8 +380,8 @@ export default function Map() {
                 <div className="w-full h-full" style={{ minHeight: "600px" }}>
                   <LeafletMapContainer
                       center={DAKAR_CENTER}
-                      zoom={12}
-                      minZoom={10}
+                      zoom={11}
+                      minZoom={9}
                       maxZoom={18}
                       style={{ height: "100%", width: "100%", minHeight: "600px" }}
                       scrollWheelZoom={true}
