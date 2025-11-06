@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 import NewReport from "./pages/NewReport";
 import Reports from "./pages/Reports";
@@ -15,6 +16,9 @@ import DashboardReports from "./pages/DashboardReports";
 import DashboardReportDetail from "./pages/DashboardReportDetail";
 import DashboardAnalytics from "./pages/DashboardAnalytics";
 import NotFound from "./pages/NotFound";
+
+// Lazy load Map pour éviter les problèmes de chargement
+const Map = lazy(() => import("./pages/Map"));
 
 const queryClient = new QueryClient();
 
@@ -29,6 +33,14 @@ const App = () => (
           <Route path="/new-report" element={<NewReport />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:id" element={<ReportDetail />} />
+          <Route 
+            path="/map" 
+            element={
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Chargement...</div>}>
+                <Map />
+              </Suspense>
+            } 
+          />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/auth" element={<Auth />} />
