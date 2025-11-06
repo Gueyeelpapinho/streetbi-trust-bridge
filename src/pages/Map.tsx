@@ -8,7 +8,7 @@ import { Droplets, Zap, Car, GraduationCap, Heart, Shield, Leaf, AlertCircle, Ma
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
-import { MapContainer as LeafletMapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer as LeafletMapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 
 // Fix pour les icônes par défaut de Leaflet
@@ -42,10 +42,10 @@ const statusLabels = {
   resolu: "Résolu",
 };
 
-// Coordonnées de Dakar, Sénégal
-const DAKAR_CENTER: [number, number] = [14.7167, -17.4677];
+// Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements
+const DAKAR_CENTER: [number, number] = [14.7025, -17.4525];
 
-// Signalements simulés réalistes pour Dakar
+// Signalements simulés réalistes pour Dakar - Coordonnées espacées pour une meilleure visualisation
 const mockReports = [
   {
     id: "mock-1",
@@ -54,8 +54,8 @@ const mockReports = [
     category: "eau",
     status: "signale",
     location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
-    latitude: 14.6928,
-    longitude: -17.4467,
+    latitude: 14.6800,
+    longitude: -17.4600,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -65,8 +65,8 @@ const mockReports = [
     category: "eclairage",
     status: "en_cours",
     location_address: "Rue de la République, Médina, Dakar",
-    latitude: 14.6937,
-    longitude: -17.4441,
+    latitude: 14.6950,
+    longitude: -17.4550,
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -76,8 +76,8 @@ const mockReports = [
     category: "voirie",
     status: "signale",
     location_address: "Boulevard Général de Gaulle, Fann, Dakar",
-    latitude: 14.6917,
-    longitude: -17.4486,
+    latitude: 14.7100,
+    longitude: -17.4700,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -87,8 +87,8 @@ const mockReports = [
     category: "education",
     status: "en_cours",
     location_address: "École primaire de Grand Yoff, Dakar",
-    latitude: 14.6945,
-    longitude: -17.4423,
+    latitude: 14.7250,
+    longitude: -17.4450,
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -98,8 +98,8 @@ const mockReports = [
     category: "environnement",
     status: "signale",
     location_address: "Quartier Parcelles Assainies, Dakar",
-    latitude: 14.6901,
-    longitude: -17.4501,
+    latitude: 14.6650,
+    longitude: -17.4650,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -109,8 +109,8 @@ const mockReports = [
     category: "securite",
     status: "signale",
     location_address: "Carrefour Liberté 6, Dakar",
-    latitude: 14.6885,
-    longitude: -17.4523,
+    latitude: 14.7000,
+    longitude: -17.4500,
     created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -120,8 +120,8 @@ const mockReports = [
     category: "eau",
     status: "resolu",
     location_address: "Avenue Blaise Diagne, Almadies, Dakar",
-    latitude: 14.6965,
-    longitude: -17.4405,
+    latitude: 14.7400,
+    longitude: -17.4300,
     created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -131,8 +131,8 @@ const mockReports = [
     category: "eclairage",
     status: "resolu",
     location_address: "Rue Mermoz, Point E, Dakar",
-    latitude: 14.7002,
-    longitude: -17.4389,
+    latitude: 14.7150,
+    longitude: -17.4350,
     created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -142,8 +142,8 @@ const mockReports = [
     category: "voirie",
     status: "resolu",
     location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
-    latitude: 14.7025,
-    longitude: -17.4356,
+    latitude: 14.7300,
+    longitude: -17.4400,
     created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -153,8 +153,8 @@ const mockReports = [
     category: "sante",
     status: "en_cours",
     location_address: "Centre de santé de Pikine, Dakar",
-    latitude: 14.6850,
-    longitude: -17.4550,
+    latitude: 14.6750,
+    longitude: -17.4750,
     created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -164,8 +164,8 @@ const mockReports = [
     category: "eclairage",
     status: "signale",
     location_address: "Marché Sandaga, Centre-ville, Dakar",
-    latitude: 14.6890,
-    longitude: -17.4430,
+    latitude: 14.6900,
+    longitude: -17.4400,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
@@ -175,8 +175,8 @@ const mockReports = [
     category: "environnement",
     status: "en_cours",
     location_address: "Avenue Faidherbe, Plateau, Dakar",
-    latitude: 14.6940,
-    longitude: -17.4460,
+    latitude: 14.7050,
+    longitude: -17.4550,
     created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ];
@@ -212,6 +212,29 @@ export default function Map() {
       console.error("Erreur lors du chargement des signalements:", error);
       // En cas d'erreur, garder les signalements simulés
     }
+  };
+
+  // Composant pour ajuster automatiquement les bounds de la carte
+  const MapBounds = ({ reports }: { reports: any[] }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (reports.length > 0) {
+        const validReports = reports.filter(r => r.latitude && r.longitude);
+        if (validReports.length > 0) {
+          const bounds = L.latLngBounds(
+            validReports.map(r => [r.latitude, r.longitude] as [number, number])
+          );
+          // Ajuster les bounds avec un padding pour une meilleure vue
+          map.fitBounds(bounds, {
+            padding: [50, 50], // Padding en pixels
+            maxZoom: 14, // Limiter le zoom max pour éviter d'être trop proche
+          });
+        }
+      }
+    }, [map, reports]);
+    
+    return null;
   };
 
   const createCustomIcon = (color: string, category: string) => {
@@ -291,7 +314,9 @@ export default function Map() {
                 <div className="w-full h-full" style={{ minHeight: "600px" }}>
                   <LeafletMapContainer
                       center={DAKAR_CENTER}
-                      zoom={13}
+                      zoom={12}
+                      minZoom={10}
+                      maxZoom={18}
                       style={{ height: "100%", width: "100%", minHeight: "600px" }}
                       scrollWheelZoom={true}
                     >
@@ -299,6 +324,7 @@ export default function Map() {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
+                      <MapBounds reports={reports} />
                       {reports.length > 0 ? (
                         reports.map((report) => {
                           if (!report.latitude || !report.longitude) return null;
@@ -365,16 +391,9 @@ export default function Map() {
                                   <Button
                                     size="sm"
                                     className="w-full mt-1 font-semibold"
-                                    onClick={() => {
-                                      if (report.id.startsWith('mock-')) {
-                                        // Pour les signalements simulés, ne pas naviguer
-                                        return;
-                                      }
-                                      navigate(`/reports/${report.id}`);
-                                    }}
-                                    disabled={report.id.startsWith('mock-')}
+                                    onClick={() => navigate(`/reports/${report.id}`)}
                                   >
-                                    {report.id.startsWith('mock-') ? 'Signalement simulé' : 'Voir détails'}
+                                    Voir détails
                                   </Button>
                                 </div>
                               </Popup>
