@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Droplets, Zap, Car, GraduationCap, Heart, Shield, Leaf, AlertCircle } from "lucide-react";
+import { Droplets, Zap, Car, GraduationCap, Heart, Shield, Leaf, AlertCircle, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
+import "leaflet/dist/leaflet.css";
+import { MapContainer as LeafletMapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 
 // Fix pour les icônes par défaut de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -16,77 +16,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
-
-// Coordonnées de Dakar
-const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
-
-// Signalements simulés (mêmes que dans Map.tsx)
-const mockReports = [
-  {
-    id: "mock-1",
-    title: "Fuite d'eau importante",
-    category: "eau",
-    status: "signale",
-    latitude: 14.6800,
-    longitude: -17.4550,
-  },
-  {
-    id: "mock-2",
-    title: "Éclairage public défaillant",
-    category: "eclairage",
-    status: "en_cours",
-    latitude: 14.6950,
-    longitude: -17.4550,
-  },
-  {
-    id: "mock-3",
-    title: "Nid-de-poule dangereux",
-    category: "voirie",
-    status: "signale",
-    latitude: 14.7100,
-    longitude: -17.4450,
-  },
-  {
-    id: "mock-4",
-    title: "Toiture de l'école endommagée",
-    category: "education",
-    status: "en_cours",
-    latitude: 14.7250,
-    longitude: -17.4420,
-  },
-  {
-    id: "mock-5",
-    title: "Déchets accumulés",
-    category: "environnement",
-    status: "signale",
-    latitude: 14.6650,
-    longitude: -17.4500,
-  },
-  {
-    id: "mock-6",
-    title: "Panneau de signalisation manquant",
-    category: "securite",
-    status: "signale",
-    latitude: 14.7000,
-    longitude: -17.4470,
-  },
-  {
-    id: "mock-7",
-    title: "Canalisation réparée",
-    category: "eau",
-    status: "resolu",
-    latitude: 14.7400,
-    longitude: -17.4320,
-  },
-  {
-    id: "mock-8",
-    title: "Éclairage rétabli",
-    category: "eclairage",
-    status: "resolu",
-    latitude: 14.7150,
-    longitude: -17.4380,
-  },
-];
 
 const categoryIcons = {
   eau: Droplets,
@@ -111,111 +40,321 @@ const statusLabels = {
   resolu: "Résolu",
 };
 
-// Composant pour ajuster les bounds
-function MapBounds({ reports }: { reports: any[] }) {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (reports.length > 0) {
-      const validReports = reports.filter(r => r.latitude && r.longitude);
-      if (validReports.length > 0) {
-        const bounds = L.latLngBounds(
-          validReports.map(r => [r.latitude, r.longitude] as [number, number])
-        );
-        map.fitBounds(bounds, {
-          padding: [50, 50],
-          maxZoom: 13,
-        });
-      }
-    }
-  }, [map, reports]);
-  
-  return null;
-}
+// Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements (Dakar + banlieues)
+const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
 
-// Créer une icône personnalisée
-const createCustomIcon = (color: string, category: string) => {
-  const categorySymbols: Record<string, string> = {
-    eau: "💧",
-    eclairage: "⚡",
-    voirie: "🚗",
-    education: "📚",
-    sante: "❤️",
-    securite: "🛡️",
-    environnement: "🌱",
-    autre: "⚠️",
-  };
-  
-  const symbol = categorySymbols[category] || "📍";
-  
-  return L.divIcon({
-    className: "custom-marker",
-    html: `<div style="
-      position: relative;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      <div style="
-        background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
-        width: 40px;
-        height: 40px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 2px ${color}40;
-        position: absolute;
-      "></div>
-      <div style="
-        transform: rotate(45deg);
-        color: white;
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
-      ">
-        ${symbol}
-      </div>
-    </div>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
-    popupAnchor: [0, -40],
-  });
-};
+// Signalements simulés réalistes pour Dakar - Coordonnées ajustées pour éviter l'océan (longitude entre -17.43 et -17.46)
+const mockReports = [
+  {
+    id: "mock-1",
+    title: "Fuite d'eau importante",
+    description: "Fuite d'eau majeure sur la canalisation principale. L'eau s'écoule dans la rue depuis 3 jours, causant des inondations.",
+    category: "eau",
+    status: "signale",
+    location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
+    latitude: 14.6800,
+    longitude: -17.4550,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-2",
+    title: "Éclairage public défaillant",
+    description: "Plusieurs lampadaires ne fonctionnent pas dans cette zone, rendant la circulation dangereuse la nuit.",
+    category: "eclairage",
+    status: "en_cours",
+    location_address: "Rue de la République, Médina, Dakar",
+    latitude: 14.6950,
+    longitude: -17.4500,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-3",
+    title: "Nid-de-poule dangereux",
+    description: "Grand nid-de-poule sur la route principale, plusieurs véhicules ont été endommagés. Risque d'accident élevé.",
+    category: "voirie",
+    status: "signale",
+    location_address: "Boulevard Général de Gaulle, Fann, Dakar",
+    latitude: 14.7100,
+    longitude: -17.4450,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-4",
+    title: "Toiture de l'école endommagée",
+    description: "Toiture de l'école primaire endommagée par les intempéries. Réparation en cours par les autorités.",
+    category: "education",
+    status: "en_cours",
+    location_address: "École primaire de Grand Yoff, Dakar",
+    latitude: 14.7250,
+    longitude: -17.4420,
+    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-5",
+    title: "Déchets accumulés",
+    description: "Accumulation importante de déchets non collectés depuis plusieurs semaines. Odeurs nauséabondes et risques sanitaires.",
+    category: "environnement",
+    status: "signale",
+    location_address: "Quartier Parcelles Assainies, Dakar",
+    latitude: 14.6650,
+    longitude: -17.4500,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-6",
+    title: "Panneau de signalisation manquant",
+    description: "Panneau de stop manquant à l'intersection, plusieurs accidents évités de justesse. Intervention urgente nécessaire.",
+    category: "securite",
+    status: "signale",
+    location_address: "Carrefour Liberté 6, Dakar",
+    latitude: 14.7000,
+    longitude: -17.4470,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-7",
+    title: "Canalisation réparée",
+    description: "Fuite d'eau réparée avec succès. La zone est maintenant sécurisée et l'eau est rétablie normalement.",
+    category: "eau",
+    status: "resolu",
+    location_address: "Avenue Blaise Diagne, Almadies, Dakar",
+    latitude: 14.7400,
+    longitude: -17.4320,
+    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-8",
+    title: "Éclairage rétabli",
+    description: "Tous les lampadaires ont été réparés. La zone est maintenant bien éclairée et sécurisée pour les piétons.",
+    category: "eclairage",
+    status: "resolu",
+    location_address: "Rue Mermoz, Point E, Dakar",
+    latitude: 14.7150,
+    longitude: -17.4380,
+    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-9",
+    title: "Route réparée",
+    description: "Nid-de-poule comblé et route refaite. La circulation est maintenant fluide et sécurisée.",
+    category: "voirie",
+    status: "resolu",
+    location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
+    latitude: 14.7300,
+    longitude: -17.4350,
+    created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-10",
+    title: "Centre de santé - Manque de matériel",
+    description: "Le centre de santé manque de matériel médical de base. Besoin urgent de fournitures pour soigner les patients.",
+    category: "sante",
+    status: "en_cours",
+    location_address: "Centre de santé de Pikine, Dakar",
+    latitude: 14.6750,
+    longitude: -17.4520,
+    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-11",
+    title: "Éclairage défaillant - Zone commerciale",
+    description: "Plusieurs lampadaires éteints dans la zone commerciale, impactant la sécurité des commerces et des clients.",
+    category: "eclairage",
+    status: "signale",
+    location_address: "Marché Sandaga, Centre-ville, Dakar",
+    latitude: 14.6900,
+    longitude: -17.4430,
+    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-12",
+    title: "Arbre menaçant",
+    description: "Grand arbre penché menaçant de tomber sur la route. Risque pour les passants et les véhicules.",
+    category: "environnement",
+    status: "en_cours",
+    location_address: "Avenue Faidherbe, Plateau, Dakar",
+    latitude: 14.7050,
+    longitude: -17.4480,
+    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-13",
+    title: "Route dégradée - Diamniadio",
+    description: "Route principale en mauvais état avec plusieurs nids-de-poule. Circulation difficile et dangereuse.",
+    category: "voirie",
+    status: "signale",
+    location_address: "Avenue de l'Indépendance, Diamniadio",
+    latitude: 14.7500,
+    longitude: -17.4000,
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-14",
+    title: "Éclairage public manquant",
+    description: "Absence totale d'éclairage public dans cette zone résidentielle. Sécurité des habitants compromise.",
+    category: "eclairage",
+    status: "en_cours",
+    location_address: "Zone résidentielle, Diamniadio",
+    latitude: 14.7600,
+    longitude: -17.3950,
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-15",
+    title: "Problème d'assainissement",
+    description: "Système d'assainissement défaillant causant des inondations lors des pluies. Risque sanitaire élevé.",
+    category: "eau",
+    status: "signale",
+    location_address: "Quartier Pikine Est, Pikine",
+    latitude: 14.7500,
+    longitude: -17.3800,
+    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-16",
+    title: "École sans électricité",
+    description: "École primaire sans électricité depuis une semaine. Impact sur l'éducation des enfants.",
+    category: "education",
+    status: "en_cours",
+    location_address: "École primaire de Thiaroye, Thiaroye",
+    latitude: 14.7200,
+    longitude: -17.3600,
+    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-17",
+    title: "Décharge sauvage",
+    description: "Décharge sauvage non autorisée causant des problèmes environnementaux et sanitaires.",
+    category: "environnement",
+    status: "signale",
+    location_address: "Zone industrielle, Rufisque",
+    latitude: 14.7100,
+    longitude: -17.2700,
+    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "mock-18",
+    title: "Route réparée - Diamniadio",
+    description: "Route principale récemment réparée. Circulation fluide et sécurisée.",
+    category: "voirie",
+    status: "resolu",
+    location_address: "Boulevard de Diamniadio, Diamniadio",
+    latitude: 14.7550,
+    longitude: -17.4050,
+    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
 
 export const InteractiveMap = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState<any[]>(mockReports);
 
   useEffect(() => {
-    // Charger les données de Supabase en arrière-plan
-    const fetchReports = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("reports")
-          .select("*")
-          .not("latitude", "is", null)
-          .not("longitude", "is", null)
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        if (!error && data && data.length > 0) {
-          const dbReportIds = new Set(data.map(r => r.id));
-          const filteredMocks = mockReports.filter(m => !dbReportIds.has(m.id));
-          setReports([...data, ...filteredMocks]);
-        }
-      } catch (error) {
-        console.error("Erreur lors du chargement des signalements:", error);
-      }
-    };
-
+    // Charger les données en arrière-plan
     fetchReports();
   }, []);
+
+  const fetchReports = async () => {
+    // Charger les données de Supabase en arrière-plan (non-bloquant)
+    // Ne pas attendre Supabase pour afficher la carte
+    try {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("*")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .order("created_at", { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        // Combiner les données de Supabase avec les signalements simulés
+        const dbReportIds = new Set(data.map((r: any) => r.id));
+        const filteredMocks = mockReports.filter(m => !dbReportIds.has(m.id));
+        const allReports = [...data, ...filteredMocks];
+        setReports(allReports);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des signalements:", error);
+      // En cas d'erreur, garder les signalements simulés
+    }
+  };
+
+  // Composant pour ajuster automatiquement les bounds de la carte
+  const MapBounds = ({ reports }: { reports: any[] }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (reports.length > 0) {
+        const validReports = reports.filter(r => r.latitude && r.longitude);
+        if (validReports.length > 0) {
+          const bounds = L.latLngBounds(
+            validReports.map(r => [r.latitude, r.longitude] as [number, number])
+          );
+          // Ajuster les bounds avec un padding pour une meilleure vue
+          map.fitBounds(bounds, {
+            padding: [50, 50], // Padding en pixels
+            maxZoom: 14, // Limiter le zoom max pour éviter d'être trop proche
+          });
+        }
+      }
+    }, [map, reports]);
+    
+    return null;
+  };
+
+  const createCustomIcon = (color: string, category: string) => {
+    // Caractères Unicode pour les catégories
+    const categorySymbols: Record<string, string> = {
+      eau: "💧",
+      eclairage: "⚡",
+      voirie: "🚗",
+      education: "📚",
+      sante: "❤️",
+      securite: "🛡️",
+      environnement: "🌱",
+      autre: "⚠️",
+    };
+    
+    const symbol = categorySymbols[category] || "📍";
+    
+    return L.divIcon({
+      className: "custom-marker",
+      html: `<div style="
+        position: relative;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
+          width: 40px;
+          height: 40px;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          border: 3px solid white;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 2px ${color}40;
+          position: absolute;
+        "></div>
+        <div style="
+          transform: rotate(45deg);
+          color: white;
+          position: relative;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+        ">
+          ${symbol}
+        </div>
+      </div>`,
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40],
+    });
+  };
 
   return (
     <section className="py-16">
@@ -232,15 +371,15 @@ export const InteractiveMap = () => {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Map Container */}
           <div className="lg:col-span-3">
-            <Card className="h-[500px] relative overflow-hidden">
-              <CardContent className="p-0 h-full">
-                <div className="w-full h-full">
-                  <MapContainer
+            <Card className="h-[500px] relative">
+              <CardContent className="p-0 h-full relative">
+                <div className="w-full h-full" style={{ minHeight: "500px" }}>
+                  <LeafletMapContainer
                     center={DAKAR_CENTER}
-                    zoom={12}
-                    minZoom={10}
+                    zoom={11}
+                    minZoom={9}
                     maxZoom={18}
-                    style={{ height: "100%", width: "100%" }}
+                    style={{ height: "100%", width: "100%", minHeight: "500px" }}
                     scrollWheelZoom={true}
                   >
                     <TileLayer
@@ -248,51 +387,89 @@ export const InteractiveMap = () => {
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
                     <MapBounds reports={reports} />
-                    {reports.map((report) => {
-                      if (!report.latitude || !report.longitude) return null;
-                      
-                      const statusColor = statusColors[report.status as keyof typeof statusColors] || statusColors.signale;
-                      const CategoryIcon = categoryIcons[report.category as keyof typeof categoryIcons] || AlertCircle;
-                      const icon = createCustomIcon(statusColor, report.category);
-                      
-                      return (
-                        <Marker
-                          key={report.id}
-                          position={[report.latitude, report.longitude]}
-                          icon={icon}
-                        >
-                          <Popup maxWidth={250} className="custom-popup">
-                            <div className="p-2 min-w-[200px]">
-                              <div className="flex items-start justify-between mb-2">
-                                <h3 className="font-semibold text-sm pr-2">{report.title}</h3>
-                                <Badge
-                                  style={{
-                                    backgroundColor: statusColor,
-                                    color: "white",
-                                    border: "none",
-                                  }}
-                                  className="text-xs font-semibold px-2 py-1 flex-shrink-0"
+                    {reports.length > 0 ? (
+                      reports.map((report) => {
+                        if (!report.latitude || !report.longitude) return null;
+                        
+                        const statusColor = statusColors[report.status as keyof typeof statusColors] || statusColors.signale;
+                        const CategoryIcon = categoryIcons[report.category as keyof typeof categoryIcons] || AlertCircle;
+                        const icon = createCustomIcon(statusColor, report.category);
+                        
+                        return (
+                          <Marker
+                            key={report.id}
+                            position={[report.latitude, report.longitude]}
+                            icon={icon}
+                          >
+                            <Popup maxWidth={300} className="custom-popup">
+                              <div className="p-3 min-w-[250px]">
+                                <div className="flex items-start justify-between mb-3 pb-2 border-b">
+                                  <h3 className="font-bold text-base text-foreground pr-2 leading-tight">
+                                    {report.title}
+                                  </h3>
+                                  <Badge
+                                    style={{
+                                      backgroundColor: statusColor,
+                                      color: "white",
+                                      border: "none",
+                                    }}
+                                    className="text-xs font-semibold px-2 py-1 flex-shrink-0"
+                                  >
+                                    {statusLabels[report.status as keyof typeof statusLabels] || "Signalé"}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center text-sm mb-3">
+                                  <div 
+                                    className="p-1.5 rounded-md mr-2"
+                                    style={{ backgroundColor: `${statusColor}20` }}
+                                  >
+                                    <CategoryIcon 
+                                      className="h-4 w-4" 
+                                      style={{ color: statusColor }}
+                                    />
+                                  </div>
+                                  <span className="font-medium capitalize text-foreground">
+                                    {report.category}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
+                                  {report.description}
+                                </p>
+                                {report.location_address && (
+                                  <div className="flex items-start text-xs text-muted-foreground mb-3 p-2 bg-muted/50 rounded-md">
+                                    <MapPin className="h-3.5 w-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
+                                    <span className="leading-relaxed">{report.location_address}</span>
+                                  </div>
+                                )}
+                                {report.created_at && (
+                                  <div className="text-xs text-muted-foreground mb-3">
+                                    Signalé le {new Date(report.created_at).toLocaleDateString('fr-FR', {
+                                      day: 'numeric',
+                                      month: 'long',
+                                      year: 'numeric'
+                                    })}
+                                  </div>
+                                )}
+                                <Button
+                                  size="sm"
+                                  className="w-full mt-1 font-semibold"
+                                  onClick={() => navigate(`/reports/${report.id}`)}
                                 >
-                                  {statusLabels[report.status as keyof typeof statusLabels] || "Signalé"}
-                                </Badge>
+                                  Voir détails
+                                </Button>
                               </div>
-                              <div className="flex items-center text-xs text-muted-foreground mb-2">
-                                <CategoryIcon className="h-3 w-3 mr-1" />
-                                <span className="capitalize">{report.category}</span>
-                              </div>
-                              <Button
-                                size="sm"
-                                className="w-full mt-2"
-                                onClick={() => navigate(`/reports/${report.id}`)}
-                              >
-                                Voir détails
-                              </Button>
-                            </div>
-                          </Popup>
-                        </Marker>
-                      );
-                    })}
-                  </MapContainer>
+                            </Popup>
+                          </Marker>
+                        );
+                      })
+                    ) : (
+                      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg z-[1000]">
+                        <p className="text-sm text-muted-foreground">
+                          Aucun signalement géolocalisé pour le moment
+                        </p>
+                      </div>
+                    )}
+                  </LeafletMapContainer>
                 </div>
               </CardContent>
             </Card>
