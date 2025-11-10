@@ -14,12 +14,31 @@ export const Header = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user || null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
+    const isTestMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+    
+    if (isTestMode) {
+      // En mode test, on peut avoir un utilisateur mock
+      // Vérifier d'abord si on a une vraie session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser(session.user);
+          fetchProfile(session.user.id);
+        } else {
+          // En mode test sans session, on peut avoir un utilisateur mock dans le localStorage
+          // ou simplement ne pas afficher l'utilisateur connecté
+          setUser(null);
+          setProfile(null);
+        }
+      });
+    } else {
+      // Mode production : vérification normale
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user || null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        }
+      });
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);

@@ -2,12 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Droplets, Zap, Car, GraduationCap, Heart, Shield, Leaf, AlertCircle, MapPin } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Droplets, Zap, Car, GraduationCap, Heart, Shield, Leaf, AlertCircle, MapPin, Calendar, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import "leaflet/dist/leaflet.css";
-import { MapContainer as LeafletMapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer as LeafletMapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
+import { mockReportsMap } from "@/lib/mockData";
 
 // Fix pour les icônes par défaut de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -40,219 +44,58 @@ const statusLabels = {
   resolu: "Résolu",
 };
 
+const statusConfig = {
+  signale: { label: "Signalé", color: "bg-red-500" },
+  en_cours: { label: "En cours", color: "bg-yellow-500" },
+  resolu: { label: "Résolu", color: "bg-green-500" },
+};
+
+const categoryLabels = {
+  eau: "Eau et assainissement",
+  voirie: "Voirie et transport",
+  eclairage: "Éclairage public",
+  sante: "Santé publique",
+  education: "Éducation",
+  environnement: "Environnement",
+  securite: "Sécurité",
+  autre: "Autre",
+};
+
+const categoryColors = {
+  eau: "bg-blue-500",
+  voirie: "bg-gray-500",
+  eclairage: "bg-yellow-500",
+  sante: "bg-red-500",
+  education: "bg-green-500",
+  environnement: "bg-emerald-500",
+  securite: "bg-orange-500",
+  autre: "bg-purple-500",
+};
+
 // Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements (Dakar + banlieues)
 const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
 
-// Signalements simulés réalistes pour Dakar - Coordonnées ajustées pour éviter l'océan (longitude entre -17.43 et -17.46)
-const mockReports = [
-  {
-    id: "mock-1",
-    title: "Fuite d'eau importante",
-    description: "Fuite d'eau majeure sur la canalisation principale. L'eau s'écoule dans la rue depuis 3 jours, causant des inondations.",
-    category: "eau",
-    status: "signale",
-    location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
-    latitude: 14.6800,
-    longitude: -17.4550,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-2",
-    title: "Éclairage public défaillant",
-    description: "Plusieurs lampadaires ne fonctionnent pas dans cette zone, rendant la circulation dangereuse la nuit.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Rue de la République, Médina, Dakar",
-    latitude: 14.6950,
-    longitude: -17.4500,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-3",
-    title: "Nid-de-poule dangereux",
-    description: "Grand nid-de-poule sur la route principale, plusieurs véhicules ont été endommagés. Risque d'accident élevé.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Boulevard Général de Gaulle, Fann, Dakar",
-    latitude: 14.7100,
-    longitude: -17.4450,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-4",
-    title: "Toiture de l'école endommagée",
-    description: "Toiture de l'école primaire endommagée par les intempéries. Réparation en cours par les autorités.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Grand Yoff, Dakar",
-    latitude: 14.7250,
-    longitude: -17.4420,
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-5",
-    title: "Déchets accumulés",
-    description: "Accumulation importante de déchets non collectés depuis plusieurs semaines. Odeurs nauséabondes et risques sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Quartier Parcelles Assainies, Dakar",
-    latitude: 14.6650,
-    longitude: -17.4400,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-6",
-    title: "Panneau de signalisation manquant",
-    description: "Panneau de stop manquant à l'intersection, plusieurs accidents évités de justesse. Intervention urgente nécessaire.",
-    category: "securite",
-    status: "signale",
-    location_address: "Carrefour Liberté 6, Dakar",
-    latitude: 14.7000,
-    longitude: -17.4470,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-7",
-    title: "Canalisation réparée",
-    description: "Fuite d'eau réparée avec succès. La zone est maintenant sécurisée et l'eau est rétablie normalement.",
-    category: "eau",
-    status: "resolu",
-    location_address: "Avenue Blaise Diagne, Almadies, Dakar",
-    latitude: 14.7400,
-    longitude: -17.4320,
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-8",
-    title: "Éclairage rétabli",
-    description: "Tous les lampadaires ont été réparés. La zone est maintenant bien éclairée et sécurisée pour les piétons.",
-    category: "eclairage",
-    status: "resolu",
-    location_address: "Rue Mermoz, Point E, Dakar",
-    latitude: 14.7150,
-    longitude: -17.4380,
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-9",
-    title: "Route réparée",
-    description: "Nid-de-poule comblé et route refaite. La circulation est maintenant fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
-    latitude: 14.7300,
-    longitude: -17.4350,
-    created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-10",
-    title: "Centre de santé - Manque de matériel",
-    description: "Le centre de santé manque de matériel médical de base. Besoin urgent de fournitures pour soigner les patients.",
-    category: "sante",
-    status: "en_cours",
-    location_address: "Centre de santé de Pikine, Dakar",
-    latitude: 14.6750,
-    longitude: -17.4520,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-11",
-    title: "Éclairage défaillant - Zone commerciale",
-    description: "Plusieurs lampadaires éteints dans la zone commerciale, impactant la sécurité des commerces et des clients.",
-    category: "eclairage",
-    status: "signale",
-    location_address: "Marché Sandaga, Centre-ville, Dakar",
-    latitude: 14.6900,
-    longitude: -17.4430,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-12",
-    title: "Arbre menaçant",
-    description: "Grand arbre penché menaçant de tomber sur la route. Risque pour les passants et les véhicules.",
-    category: "environnement",
-    status: "en_cours",
-    location_address: "Avenue Faidherbe, Plateau, Dakar",
-    latitude: 14.7050,
-    longitude: -17.4480,
-    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-13",
-    title: "Route dégradée - Diamniadio",
-    description: "Route principale en mauvais état avec plusieurs nids-de-poule. Circulation difficile et dangereuse.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Avenue de l'Indépendance, Diamniadio",
-    latitude: 14.7500,
-    longitude: -17.4000,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-14",
-    title: "Éclairage public manquant",
-    description: "Absence totale d'éclairage public dans cette zone résidentielle. Sécurité des habitants compromise.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Zone résidentielle, Diamniadio",
-    latitude: 14.7600,
-    longitude: -17.3950,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-15",
-    title: "Problème d'assainissement",
-    description: "Système d'assainissement défaillant causant des inondations lors des pluies. Risque sanitaire élevé.",
-    category: "eau",
-    status: "signale",
-    location_address: "Quartier Pikine Est, Pikine",
-    latitude: 14.7500,
-    longitude: -17.3800,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-16",
-    title: "École sans électricité",
-    description: "École primaire sans électricité depuis une semaine. Impact sur l'éducation des enfants.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Thiaroye, Thiaroye",
-    latitude: 14.7200,
-    longitude: -17.3600,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-17",
-    title: "Décharge sauvage",
-    description: "Décharge sauvage non autorisée causant des problèmes environnementaux et sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Zone industrielle, Rufisque",
-    latitude: 14.7100,
-    longitude: -17.2700,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-18",
-    title: "Route réparée - Diamniadio",
-    description: "Route principale récemment réparée. Circulation fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard de Diamniadio, Diamniadio",
-    latitude: 14.7550,
-    longitude: -17.4050,
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export const InteractiveMap = () => {
   const navigate = useNavigate();
-  const [reports, setReports] = useState<any[]>(mockReports);
+  const [reports, setReports] = useState<any[]>(mockReportsMap);
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [reportUpdates, setReportUpdates] = useState<any[]>([]);
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     // Charger les données en arrière-plan
     fetchReports();
   }, []);
+
+  useEffect(() => {
+    // Charger les updates quand un rapport est sélectionné
+    if (selectedReport && !selectedReport.id?.startsWith("mock-")) {
+      fetchReportUpdates(selectedReport.id);
+    } else {
+      setReportUpdates([]);
+    }
+  }, [selectedReport]);
 
   const fetchReports = async () => {
     // Charger les données de Supabase en arrière-plan (non-bloquant)
@@ -268,7 +111,7 @@ export const InteractiveMap = () => {
       if (!error && data && data.length > 0) {
         // Combiner les données de Supabase avec les signalements simulés
         const dbReportIds = new Set(data.map((r: any) => r.id));
-        const filteredMocks = mockReports.filter(m => !dbReportIds.has(m.id));
+        const filteredMocks = mockReportsMap.filter(m => !dbReportIds.has(m.id));
         const allReports = [...data, ...filteredMocks];
         setReports(allReports);
       }
@@ -276,6 +119,32 @@ export const InteractiveMap = () => {
       console.error("Erreur lors du chargement des signalements:", error);
       // En cas d'erreur, garder les signalements simulés
     }
+  };
+
+  const fetchReportUpdates = async (reportId: string) => {
+    setLoadingUpdates(true);
+    try {
+      const { data, error } = await supabase
+        .from("report_updates")
+        .select("*")
+        .eq("report_id", reportId)
+        .eq("is_public", true)
+        .order("created_at", { ascending: false });
+
+      if (!error && data) {
+        setReportUpdates(data);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des mises à jour:", error);
+      setReportUpdates([]);
+    } finally {
+      setLoadingUpdates(false);
+    }
+  };
+
+  const handleReportClick = (report: any) => {
+    setSelectedReport(report);
+    setIsDialogOpen(true);
   };
 
   // Composant pour ajuster automatiquement les bounds de la carte
@@ -392,74 +261,19 @@ export const InteractiveMap = () => {
                         if (!report.latitude || !report.longitude) return null;
                         
                         const statusColor = statusColors[report.status as keyof typeof statusColors] || statusColors.signale;
-                        const CategoryIcon = categoryIcons[report.category as keyof typeof categoryIcons] || AlertCircle;
                         const icon = createCustomIcon(statusColor, report.category);
-                        
-                        return (
+                    
+                    return (
                           <Marker
                             key={report.id}
                             position={[report.latitude, report.longitude]}
                             icon={icon}
-                          >
-                            <Popup maxWidth={300} className="custom-popup">
-                              <div className="p-3 min-w-[250px]">
-                                <div className="flex items-start justify-between mb-3 pb-2 border-b">
-                                  <h3 className="font-bold text-base text-foreground pr-2 leading-tight">
-                                    {report.title}
-                                  </h3>
-                                  <Badge
-                                    style={{
-                                      backgroundColor: statusColor,
-                                      color: "white",
-                                      border: "none",
-                                    }}
-                                    className="text-xs font-semibold px-2 py-1 flex-shrink-0"
-                                  >
-                                    {statusLabels[report.status as keyof typeof statusLabels] || "Signalé"}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center text-sm mb-3">
-                                  <div 
-                                    className="p-1.5 rounded-md mr-2"
-                                    style={{ backgroundColor: `${statusColor}20` }}
-                                  >
-                                    <CategoryIcon 
-                                      className="h-4 w-4" 
-                                      style={{ color: statusColor }}
-                                    />
-                                  </div>
-                                  <span className="font-medium capitalize text-foreground">
-                                    {report.category}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                                  {report.description}
-                                </p>
-                                {report.location_address && (
-                                  <div className="flex items-start text-xs text-muted-foreground mb-3 p-2 bg-muted/50 rounded-md">
-                                    <MapPin className="h-3.5 w-3.5 mr-1.5 mt-0.5 flex-shrink-0" />
-                                    <span className="leading-relaxed">{report.location_address}</span>
-                                  </div>
-                                )}
-                                {report.created_at && (
-                                  <div className="text-xs text-muted-foreground mb-3">
-                                    Signalé le {new Date(report.created_at).toLocaleDateString('fr-FR', {
-                                      day: 'numeric',
-                                      month: 'long',
-                                      year: 'numeric'
-                                    })}
-                                  </div>
-                                )}
-                                <Button
-                                  size="sm"
-                                  className="w-full mt-1 font-semibold"
-                                  onClick={() => navigate(`/reports/${report.id}`)}
-                                >
-                                  Voir détails
-                                </Button>
-                              </div>
-                            </Popup>
-                          </Marker>
+                            eventHandlers={{
+                              click: () => {
+                                handleReportClick(report);
+                              },
+                            }}
+                          />
                         );
                       })
                     ) : (
@@ -467,7 +281,7 @@ export const InteractiveMap = () => {
                         <p className="text-sm text-muted-foreground">
                           Aucun signalement géolocalisé pour le moment
                         </p>
-                      </div>
+                  </div>
                     )}
                   </LeafletMapContainer>
                 </div>
@@ -484,13 +298,13 @@ export const InteractiveMap = () => {
               <CardContent className="space-y-3">
                 {Object.entries(statusLabels).map(([status, label]) => (
                   <div key={status} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2">
                       <div
                         className="w-4 h-4 rounded-full"
                         style={{ backgroundColor: statusColors[status as keyof typeof statusColors] }}
                       ></div>
                       <span className="text-sm">{label}</span>
-                    </div>
+                  </div>
                     <Badge variant="secondary">
                       {reports.filter((r) => r.status === status).length}
                     </Badge>
@@ -508,11 +322,11 @@ export const InteractiveMap = () => {
                   const count = reports.filter((r) => r.category === category).length;
                   if (count === 0) return null;
                   return (
-                    <div key={category} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4 text-primary" />
-                        <span className="text-sm capitalize">{category}</span>
-                      </div>
+                  <div key={category} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <span className="text-sm capitalize">{category}</span>
+                    </div>
                       <Badge variant="secondary">{count}</Badge>
                     </div>
                   );
@@ -540,6 +354,209 @@ export const InteractiveMap = () => {
           </div>
         </div>
       </div>
+
+      {/* Dialog pour afficher les détails du rapport */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedReport && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <DialogTitle className="text-2xl mb-2">{selectedReport.title}</DialogTitle>
+                    <DialogDescription>
+                      <Badge
+                        style={{
+                          backgroundColor: statusColors[selectedReport.status as keyof typeof statusColors] || statusColors.signale,
+                          color: "white",
+                          border: "none",
+                        }}
+                        className="text-sm font-semibold px-3 py-1"
+                      >
+                        {statusLabels[selectedReport.status as keyof typeof statusLabels] || "Signalé"}
+                      </Badge>
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="grid gap-6 md:grid-cols-2 mt-4">
+                {/* Colonne gauche - Informations principales */}
+                <div className="space-y-4">
+                  {selectedReport.image_url && (
+                    <div className="rounded-lg overflow-hidden">
+                      <img
+                        src={selectedReport.image_url}
+                        alt={selectedReport.title}
+                        className="w-full h-64 object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <h4 className="font-semibold mb-2 text-foreground">Description</h4>
+                    <p className="text-muted-foreground leading-relaxed">{selectedReport.description}</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-muted-foreground">
+                        Signalé le {format(new Date(selectedReport.created_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr })}
+                      </span>
+                    </div>
+
+                    {selectedReport.location_address && (
+                      <div className="flex items-start space-x-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <span className="text-sm text-muted-foreground">{selectedReport.location_address}</span>
+                      </div>
+                    )}
+
+                    {selectedReport.latitude && selectedReport.longitude && (
+                      <div className="text-sm text-muted-foreground">
+                        <span className="font-medium">Coordonnées: </span>
+                        {selectedReport.latitude.toFixed(6)}, {selectedReport.longitude.toFixed(6)}
+                      </div>
+                    )}
+
+                    <div>
+                      <span className="text-sm font-medium text-foreground">Catégorie: </span>
+                      <Badge className={categoryColors[selectedReport.category as keyof typeof categoryColors] || categoryColors.autre}>
+                        {categoryLabels[selectedReport.category as keyof typeof categoryLabels] || selectedReport.category}
+                      </Badge>
+                    </div>
+
+                    {selectedReport.hedera_hash && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <LinkIcon className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium text-primary text-sm">Preuve Blockchain</p>
+                            <p className="text-xs text-muted-foreground break-all mt-1">
+                              Hash: {selectedReport.hedera_hash}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedReport.status === "resolu" && (
+                      <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Résolution</h4>
+                        <div className="space-y-2 text-sm">
+                          {selectedReport.resolved_by && (
+                            <p>
+                              <span className="font-medium text-green-900 dark:text-green-100">Résolu par: </span>
+                              <span className="text-green-700 dark:text-green-300">{selectedReport.resolved_by}</span>
+                            </p>
+                          )}
+                          {selectedReport.resolution_cost && (
+                            <p>
+                              <span className="font-medium text-green-900 dark:text-green-100">Coût: </span>
+                              <span className="text-green-700 dark:text-green-300">{selectedReport.resolution_cost} FCFA</span>
+                            </p>
+                          )}
+                          {selectedReport.resolution_note && (
+                            <div>
+                              <p className="font-medium text-green-900 dark:text-green-100 mb-1">Note:</p>
+                              <p className="text-green-700 dark:text-green-300">{selectedReport.resolution_note}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedReport.assigned_agent && (
+                      <div className="text-sm">
+                        <span className="font-medium text-foreground">Agent assigné: </span>
+                        <span className="text-muted-foreground">{selectedReport.assigned_agent}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Colonne droite - Timeline et informations supplémentaires */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold mb-4 text-foreground">Timeline du statut</h4>
+                    <div className="space-y-4">
+                      {/* Statut actuel */}
+                      <div className="flex items-start space-x-4">
+                        <div
+                          className="w-3 h-3 rounded-full mt-1.5 flex-shrink-0"
+                          style={{
+                            backgroundColor: statusColors[selectedReport.status as keyof typeof statusColors] || statusColors.signale,
+                          }}
+                        ></div>
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">
+                            {statusLabels[selectedReport.status as keyof typeof statusLabels] || "Signalé"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {selectedReport.updated_at
+                              ? format(new Date(selectedReport.updated_at), "dd MMM yyyy, HH:mm", { locale: fr })
+                              : format(new Date(selectedReport.created_at), "dd MMM yyyy, HH:mm", { locale: fr })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Timeline des updates */}
+                      {loadingUpdates ? (
+                        <div className="text-sm text-muted-foreground">Chargement des mises à jour...</div>
+                      ) : reportUpdates.length > 0 ? (
+                        <div className="border-l-2 border-muted ml-1.5 pl-6 space-y-4">
+                          {reportUpdates.map((update) => {
+                            const updateStatusColor = statusColors[update.status as keyof typeof statusColors] || statusColors.signale;
+                            return (
+                              <div key={update.id}>
+                                <div className="flex items-start space-x-4">
+                                  <div
+                                    className="w-3 h-3 rounded-full -ml-7 mt-1.5 flex-shrink-0"
+                                    style={{ backgroundColor: updateStatusColor }}
+                                  ></div>
+                                  <div className="flex-1 -ml-3">
+                                    <p className="font-medium text-foreground">
+                                      {statusLabels[update.status as keyof typeof statusLabels] || "Signalé"}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {format(new Date(update.created_at), "dd MMM yyyy, HH:mm", { locale: fr })}
+                                    </p>
+                                    {update.comment && (
+                                      <p className="text-sm text-muted-foreground mt-1">{update.comment}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : !selectedReport.id?.startsWith("mock-") ? (
+                        <div className="text-sm text-muted-foreground">
+                          Aucune mise à jour publique pour le moment
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Bouton pour voir la page complète (si le rapport existe dans la DB) */}
+                  {!selectedReport.id?.startsWith("mock-") && (
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        setIsDialogOpen(false);
+                        navigate(`/reports/${selectedReport.id}`);
+                      }}
+                    >
+                      Voir la page complète
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

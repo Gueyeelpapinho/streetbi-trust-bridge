@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, MapPin, Calendar, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { getMockReportById, normalizeStatus } from "@/lib/mockData";
 
 const categories = [
   { value: "eau", label: "Eau et assainissement", color: "bg-blue-500" },
@@ -25,6 +26,9 @@ const statusConfig = {
   signale: { label: "Signalé", color: "bg-red-500" },
   en_cours: { label: "En cours", color: "bg-yellow-500" },
   resolu: { label: "Résolu", color: "bg-green-500" },
+  pending: { label: "Signalé", color: "bg-red-500" },
+  "in-progress": { label: "En cours", color: "bg-yellow-500" },
+  resolved: { label: "Résolu", color: "bg-green-500" },
 };
 
 export default function ReportDetail() {
@@ -43,7 +47,27 @@ export default function ReportDetail() {
 
     setLoading(true);
 
-    // Fetch report
+    // Vérifier d'abord si c'est un rapport mocké
+    const mockReport = getMockReportById(id);
+    
+    if (mockReport) {
+      // Utiliser les données mockées
+      // Normaliser le statut et ajouter location_address si manquant
+      const normalizedReport = {
+        ...mockReport,
+        status: normalizeStatus(mockReport.status),
+        location_address: mockReport.location_address || mockReport.location || "",
+        image_url: mockReport.image_url || mockReport.image || "",
+        updated_at: mockReport.updated_at || mockReport.created_at,
+      };
+      setReport(normalizedReport);
+      // Pas de mises à jour pour les rapports mockés
+      setUpdates([]);
+      setLoading(false);
+      return;
+    }
+
+    // Sinon, charger depuis Supabase
     const { data: reportData, error: reportError } = await supabase
       .from("reports")
       .select("*")
@@ -54,16 +78,18 @@ export default function ReportDetail() {
       setReport(reportData);
     }
 
-    // Fetch updates
-    const { data: updatesData, error: updatesError } = await supabase
-      .from("report_updates")
-      .select("*")
-      .eq("report_id", id)
-      .eq("is_public", true)
-      .order("created_at", { ascending: false });
+    // Fetch updates seulement pour les rapports de Supabase
+    if (!reportError && reportData) {
+      const { data: updatesData, error: updatesError } = await supabase
+        .from("report_updates")
+        .select("*")
+        .eq("report_id", id)
+        .eq("is_public", true)
+        .order("created_at", { ascending: false });
 
-    if (!updatesError && updatesData) {
-      setUpdates(updatesData);
+      if (!updatesError && updatesData) {
+        setUpdates(updatesData);
+      }
     }
 
     setLoading(false);
@@ -135,10 +161,12 @@ export default function ReportDetail() {
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{report.location_address}</span>
-                </div>
+                {(report.location_address || report.location) && (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{report.location_address || report.location}</span>
+                  </div>
+                )}
 
                 {category && (
                   <div>
@@ -163,7 +191,7 @@ export default function ReportDetail() {
               </CardContent>
             </Card>
 
-            {report.status === "resolu" && (report.resolved_by || report.resolution_note) && (
+            {(report.status === "resolu" || report.status === "resolved") && (report.resolved_by || report.resolution_note || report.resolution_cost) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Résolution</CardTitle>
@@ -175,10 +203,18 @@ export default function ReportDetail() {
                       {report.resolved_by}
                     </p>
                   )}
+                  {report.assigned_agent && report.status !== "resolu" && report.status !== "resolved" && (
+                    <p className="text-sm">
+                      <span className="font-medium">Agent assigné: </span>
+                      {report.assigned_agent}
+                    </p>
+                  )}
                   {report.resolution_cost && (
                     <p className="text-sm">
                       <span className="font-medium">Coût: </span>
-                      {report.resolution_cost} FCFA
+                      {typeof report.resolution_cost === "number" 
+                        ? `${report.resolution_cost.toLocaleString("fr-FR")} FCFA`
+                        : `${report.resolution_cost} FCFA`}
                     </p>
                   )}
                   {report.resolution_note && (
@@ -187,6 +223,17 @@ export default function ReportDetail() {
                       <p className="text-sm text-muted-foreground">{report.resolution_note}</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+            
+            {report.assigned_agent && report.status !== "resolu" && report.status !== "resolved" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Agent assigné</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{report.assigned_agent}</p>
                 </CardContent>
               </Card>
             )}
@@ -205,7 +252,9 @@ export default function ReportDetail() {
                     <div className="flex-1">
                       <p className="font-medium">{status.label}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(report.updated_at), "dd MMM yyyy, HH:mm", { locale: fr })}
+                        {report.updated_at
+                          ? format(new Date(report.updated_at), "dd MMM yyyy, HH:mm", { locale: fr })
+                          : format(new Date(report.created_at), "dd MMM yyyy, HH:mm", { locale: fr })}
                       </p>
                     </div>
                   </div>

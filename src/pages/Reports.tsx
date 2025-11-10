@@ -8,68 +8,24 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, MapPin, Clock, Droplets, Zap, Car, GraduationCap, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const mockReports = [
-  {
-    id: 1,
-    title: "Fuite d'eau importante sur l'avenue Bourguiba",
-    description: "Canalisation cassée provoquant une importante fuite d'eau et des désagréments pour les riverains",
-    location: "Avenue Bourguiba, Plateau, Dakar",
-    status: "pending",
-    date: "2024-01-15",
-    category: "eau",
-    author: "Amadou Diop",
-    views: 156,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    title: "Éclairage public défaillant quartier Médina",
-    description: "Plusieurs lampadaires ne fonctionnent plus depuis une semaine, créant un problème de sécurité",
-    location: "Quartier Médina, Dakar",
-    status: "in-progress",
-    date: "2024-01-14",
-    category: "eclairage",
-    author: "Fatou Sall",
-    views: 89,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 3,
-    title: "Nid de poule dangereux route de Pikine",
-    description: "Route très dégradée causant des accidents et endommageant les véhicules",
-    location: "Route de Pikine, Dakar",
-    status: "pending",
-    date: "2024-01-13",
-    category: "voirie",
-    author: "Ousmane Ba",
-    views: 234,
-    image: "/placeholder.svg"
-  },
-  {
-    id: 4,
-    title: "École sans électricité depuis 3 jours",
-    description: "Panne électrique dans l'établissement scolaire, perturbant les cours",
-    location: "École primaire de Guédiawaye",
-    status: "resolved",
-    date: "2024-01-10",
-    category: "education",
-    author: "Aissatou Thiam",
-    views: 178,
-    image: "/placeholder.svg"
-  },
-];
+import { mockReportsSimple } from "@/lib/mockData";
 
 const statusLabels = {
   pending: "Nouveau",
   "in-progress": "En cours",
-  resolved: "Résolu"
+  resolved: "Résolu",
+  signale: "Signalé",
+  en_cours: "En cours",
+  resolu: "Résolu"
 };
 
 const statusColors = {
   pending: "bg-status-pending text-warning-foreground",
   "in-progress": "bg-status-in-progress text-white",
-  resolved: "bg-status-resolved text-success-foreground"
+  resolved: "bg-status-resolved text-success-foreground",
+  signale: "bg-status-pending text-warning-foreground",
+  en_cours: "bg-status-in-progress text-white",
+  resolu: "bg-status-resolved text-success-foreground"
 };
 
 const categoryIcons = {
@@ -85,11 +41,22 @@ export default function Reports() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  const filteredReports = mockReports.filter(report => {
+  const filteredReports = mockReportsSimple.filter(report => {
+    const location = report.location || report.location_address || "";
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         report.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || report.status === statusFilter;
+                         location.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Normaliser le statut pour le filtrage
+    const normalizedStatus = report.status === "pending" || report.status === "signale" ? "pending"
+      : report.status === "in-progress" || report.status === "en_cours" ? "in-progress"
+      : "resolved";
+    
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "pending" && (report.status === "pending" || report.status === "signale")) ||
+      (statusFilter === "in-progress" && (report.status === "in-progress" || report.status === "en_cours")) ||
+      (statusFilter === "resolved" && (report.status === "resolved" || report.status === "resolu")) ||
+      normalizedStatus === statusFilter;
     const matchesCategory = categoryFilter === "all" || report.category === categoryFilter;
     
     return matchesSearch && matchesStatus && matchesCategory;
@@ -189,6 +156,12 @@ export default function Reports() {
         <div className="space-y-6">
           {filteredReports.map((report) => {
             const CategoryIcon = categoryIcons[report.category as keyof typeof categoryIcons];
+            const status = report.status === "pending" || report.status === "signale" ? "signale" 
+              : report.status === "in-progress" || report.status === "en_cours" ? "en_cours"
+              : "resolu";
+            const displayStatus = report.status === "pending" || report.status === "signale" ? "pending" 
+              : report.status === "in-progress" || report.status === "en_cours" ? "in-progress"
+              : "resolved";
             
             return (
               <Card key={report.id} className="hover:shadow-card transition-all duration-300 cursor-pointer" onClick={() => navigate(`/report/${report.id}`)}>
@@ -202,16 +175,18 @@ export default function Reports() {
                     {/* Content */}
                     <div className="flex-1 space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={statusColors[report.status as keyof typeof statusColors]}>
-                          {statusLabels[report.status as keyof typeof statusLabels]}
+                        <Badge className={statusColors[displayStatus as keyof typeof statusColors]}>
+                          {statusLabels[status as keyof typeof statusLabels]}
                         </Badge>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Clock className="h-3 w-3 mr-1" />
-                          {new Date(report.date).toLocaleDateString('fr-FR')}
+                          {report.date ? new Date(report.date).toLocaleDateString('fr-FR') : new Date(report.created_at).toLocaleDateString('fr-FR')}
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <span>👁 {report.views} vues</span>
-                        </div>
+                        {report.views && (
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <span>👁 {report.views} vues</span>
+                          </div>
+                        )}
                       </div>
                       
                       <div>
@@ -226,11 +201,13 @@ export default function Reports() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3 mr-1" />
-                          {report.location}
+                          {report.location || report.location_address}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          Par {report.author}
-                        </div>
+                        {report.author && (
+                          <div className="text-sm text-muted-foreground">
+                            Par {report.author}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

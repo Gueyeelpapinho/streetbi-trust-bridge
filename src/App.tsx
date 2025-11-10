@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import DashboardReports from "./pages/DashboardReports";
 import DashboardReportDetail from "./pages/DashboardReportDetail";
 import DashboardAnalytics from "./pages/DashboardAnalytics";
+import AuthorityDashboard from "./pages/AuthorityDashbord";
 import NotFound from "./pages/NotFound";
 
 // Lazy load Map pour éviter les problèmes de chargement
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/new-report" element={<NewReport />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:id" element={<ReportDetail />} />
+          <Route path="/report/:id" element={<ReportDetail />} />
           <Route 
             path="/map" 
             element={
@@ -48,6 +50,7 @@ const App = () => (
           <Route path="/dashboard/reports" element={<DashboardReports />} />
           <Route path="/dashboard/reports/:id" element={<DashboardReportDetail />} />
           <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
+          <Route path="/authority-dashboard" element={<AuthorityDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

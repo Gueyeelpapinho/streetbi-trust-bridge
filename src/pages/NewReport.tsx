@@ -221,9 +221,9 @@ export default function NewReport() {
                 {formData.imagePreview ? (
                   <div className="space-y-4">
                     <div className="relative inline-block">
-                      <img
+                    <img
                         src={formData.imagePreview}
-                        alt="Preview"
+                      alt="Preview"
                         className="max-h-80 mx-auto rounded-lg shadow-lg"
                       />
                       <Button
@@ -255,15 +255,15 @@ export default function NewReport() {
                       <p className="text-sm text-muted-foreground">PNG, JPG jusqu'à 10MB</p>
                     </div>
                     <div className="flex gap-3 justify-center">
-                      <input
+                    <input
                         ref={fileInputRef}
-                        type="file"
-                        id="image-upload"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                      />
-                      <Button asChild>
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <Button asChild>
                         <label htmlFor="image-upload" className="cursor-pointer">
                           <Upload className="h-4 w-4 mr-2" />
                           Choisir une photo
@@ -283,7 +283,7 @@ export default function NewReport() {
                           <Camera className="h-4 w-4 mr-2" />
                           Prendre une photo
                         </label>
-                      </Button>
+                    </Button>
                     </div>
                   </div>
                 )}
@@ -566,8 +566,8 @@ export default function NewReport() {
                     </>
                   ) : (
                     <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Envoyer le signalement
+                  <Send className="h-4 w-4 mr-2" />
+                  Envoyer le signalement
                     </>
                   )}
                 </Button>

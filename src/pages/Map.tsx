@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import "leaflet/dist/leaflet.css";
 import { MapContainer as LeafletMapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
+import { mockReportsMap } from "@/lib/mockData";
 
 // Fix pour les icônes par défaut de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -45,211 +46,9 @@ const statusLabels = {
 // Coordonnées de Dakar, Sénégal - Centre ajusté pour mieux afficher les signalements (Dakar + banlieues)
 const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
 
-// Signalements simulés réalistes pour Dakar - Coordonnées ajustées pour éviter l'océan (longitude entre -17.43 et -17.46)
-const mockReports = [
-  {
-    id: "mock-1",
-    title: "Fuite d'eau importante",
-    description: "Fuite d'eau majeure sur la canalisation principale. L'eau s'écoule dans la rue depuis 3 jours, causant des inondations.",
-    category: "eau",
-    status: "signale",
-    location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
-    latitude: 14.6800,
-    longitude: -17.4550,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-2",
-    title: "Éclairage public défaillant",
-    description: "Plusieurs lampadaires ne fonctionnent pas dans cette zone, rendant la circulation dangereuse la nuit.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Rue de la République, Médina, Dakar",
-    latitude: 14.6950,
-    longitude: -17.4500,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-3",
-    title: "Nid-de-poule dangereux",
-    description: "Grand nid-de-poule sur la route principale, plusieurs véhicules ont été endommagés. Risque d'accident élevé.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Boulevard Général de Gaulle, Fann, Dakar",
-    latitude: 14.7100,
-    longitude: -17.4450,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-4",
-    title: "Toiture de l'école endommagée",
-    description: "Toiture de l'école primaire endommagée par les intempéries. Réparation en cours par les autorités.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Grand Yoff, Dakar",
-    latitude: 14.7250,
-    longitude: -17.4420,
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-5",
-    title: "Déchets accumulés",
-    description: "Accumulation importante de déchets non collectés depuis plusieurs semaines. Odeurs nauséabondes et risques sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Quartier Parcelles Assainies, Dakar",
-    latitude: 14.6650,
-    longitude: -17.4400,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-6",
-    title: "Panneau de signalisation manquant",
-    description: "Panneau de stop manquant à l'intersection, plusieurs accidents évités de justesse. Intervention urgente nécessaire.",
-    category: "securite",
-    status: "signale",
-    location_address: "Carrefour Liberté 6, Dakar",
-    latitude: 14.7000,
-    longitude: -17.4470,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-7",
-    title: "Canalisation réparée",
-    description: "Fuite d'eau réparée avec succès. La zone est maintenant sécurisée et l'eau est rétablie normalement.",
-    category: "eau",
-    status: "resolu",
-    location_address: "Avenue Blaise Diagne, Almadies, Dakar",
-    latitude: 14.7400,
-    longitude: -17.4320,
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-8",
-    title: "Éclairage rétabli",
-    description: "Tous les lampadaires ont été réparés. La zone est maintenant bien éclairée et sécurisée pour les piétons.",
-    category: "eclairage",
-    status: "resolu",
-    location_address: "Rue Mermoz, Point E, Dakar",
-    latitude: 14.7150,
-    longitude: -17.4380,
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-9",
-    title: "Route réparée",
-    description: "Nid-de-poule comblé et route refaite. La circulation est maintenant fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
-    latitude: 14.7300,
-    longitude: -17.4350,
-    created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-10",
-    title: "Centre de santé - Manque de matériel",
-    description: "Le centre de santé manque de matériel médical de base. Besoin urgent de fournitures pour soigner les patients.",
-    category: "sante",
-    status: "en_cours",
-    location_address: "Centre de santé de Pikine, Dakar",
-    latitude: 14.6750,
-    longitude: -17.4520,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-11",
-    title: "Éclairage défaillant - Zone commerciale",
-    description: "Plusieurs lampadaires éteints dans la zone commerciale, impactant la sécurité des commerces et des clients.",
-    category: "eclairage",
-    status: "signale",
-    location_address: "Marché Sandaga, Centre-ville, Dakar",
-    latitude: 14.6900,
-    longitude: -17.4430,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-12",
-    title: "Arbre menaçant",
-    description: "Grand arbre penché menaçant de tomber sur la route. Risque pour les passants et les véhicules.",
-    category: "environnement",
-    status: "en_cours",
-    location_address: "Avenue Faidherbe, Plateau, Dakar",
-    latitude: 14.7050,
-    longitude: -17.4480,
-    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-13",
-    title: "Route dégradée - Diamniadio",
-    description: "Route principale en mauvais état avec plusieurs nids-de-poule. Circulation difficile et dangereuse.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Avenue de l'Indépendance, Diamniadio",
-    latitude: 14.7500,
-    longitude: -17.4000,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-14",
-    title: "Éclairage public manquant",
-    description: "Absence totale d'éclairage public dans cette zone résidentielle. Sécurité des habitants compromise.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Zone résidentielle, Diamniadio",
-    latitude: 14.7600,
-    longitude: -17.3950,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-15",
-    title: "Problème d'assainissement",
-    description: "Système d'assainissement défaillant causant des inondations lors des pluies. Risque sanitaire élevé.",
-    category: "eau",
-    status: "signale",
-    location_address: "Quartier Pikine Est, Pikine",
-    latitude: 14.7500,
-    longitude: -17.3800,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-16",
-    title: "École sans électricité",
-    description: "École primaire sans électricité depuis une semaine. Impact sur l'éducation des enfants.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Thiaroye, Thiaroye",
-    latitude: 14.7200,
-    longitude: -17.3600,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-17",
-    title: "Décharge sauvage",
-    description: "Décharge sauvage non autorisée causant des problèmes environnementaux et sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Zone industrielle, Rufisque",
-    latitude: 14.7100,
-    longitude: -17.2700,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-18",
-    title: "Route réparée - Diamniadio",
-    description: "Route principale récemment réparée. Circulation fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard de Diamniadio, Diamniadio",
-    latitude: 14.7550,
-    longitude: -17.4050,
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export default function Map() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState<any[]>(mockReports); // Charger immédiatement les signalements simulés
+  const [reports, setReports] = useState<any[]>(mockReportsMap); // Charger immédiatement les signalements simulés
 
   useEffect(() => {
     // Charger les données en arrière-plan
@@ -270,7 +69,7 @@ export default function Map() {
       if (!error && data && data.length > 0) {
         // Combiner les données de Supabase avec les signalements simulés
         const dbReportIds = new Set(data.map((r: any) => r.id));
-        const filteredMocks = mockReports.filter(m => !dbReportIds.has(m.id));
+        const filteredMocks = mockReportsMap.filter(m => !dbReportIds.has(m.id));
         const allReports = [...data, ...filteredMocks];
         setReports(allReports);
       }
@@ -333,9 +132,9 @@ export default function Map() {
           background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);
           width: 40px;
           height: 40px;
-          border-radius: 50% 50% 50% 0;
-          transform: rotate(-45deg);
-          border: 3px solid white;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 0 2px ${color}40;
           position: absolute;
         "></div>
@@ -377,7 +176,7 @@ export default function Map() {
           <div className="lg:col-span-3">
             <Card className="h-[600px] relative">
               <CardContent className="p-0 h-full relative">
-                <div className="w-full h-full" style={{ minHeight: "600px" }}>
+                  <div className="w-full h-full" style={{ minHeight: "600px" }}>
                   <LeafletMapContainer
                       center={DAKAR_CENTER}
                       zoom={11}
@@ -474,7 +273,7 @@ export default function Map() {
                         </div>
                       )}
                     </LeafletMapContainer>
-                </div>
+                  </div>
               </CardContent>
             </Card>
           </div>

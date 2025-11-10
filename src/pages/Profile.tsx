@@ -95,6 +95,25 @@ export default function Profile() {
   }, []);
 
   const checkAuth = async () => {
+    // Mode test : bypass des credentials en développement
+    const isTestMode = import.meta.env.DEV || import.meta.env.MODE === 'development';
+    
+    if (isTestMode) {
+      // En mode test, on crée un profil mock
+      setProfile({
+        id: "test-citoyen-id",
+        full_name: "Citoyen Test",
+        role: "citoyen",
+        wer_tokens: 150,
+        reports_submitted: 5,
+        problems_resolved: 2,
+        phone: "+221 77 123 45 67",
+      });
+      setLoading(false);
+      return;
+    }
+
+    // Mode production : authentification normale
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate("/auth");
