@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { mockReportsMap, normalizeStatus } from "@/lib/mockData";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -94,208 +95,6 @@ const categoryIcons = {
 // Coordonnées de Dakar, Sénégal
 const DAKAR_CENTER: [number, number] = [14.7150, -17.4000];
 
-// Signalements simulés réalistes pour Dakar
-const mockReports = [
-  {
-    id: "mock-1",
-    title: "Fuite d'eau importante",
-    description: "Fuite d'eau majeure sur la canalisation principale. L'eau s'écoule dans la rue depuis 3 jours, causant des inondations.",
-    category: "eau",
-    status: "signale",
-    location_address: "Avenue Cheikh Anta Diop, Plateau, Dakar",
-    latitude: 14.6800,
-    longitude: -17.4550,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-2",
-    title: "Éclairage public défaillant",
-    description: "Plusieurs lampadaires ne fonctionnent pas dans cette zone, rendant la circulation dangereuse la nuit.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Rue de la République, Médina, Dakar",
-    latitude: 14.6950,
-    longitude: -17.4500,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-3",
-    title: "Nid-de-poule dangereux",
-    description: "Grand nid-de-poule sur la route principale, plusieurs véhicules ont été endommagés. Risque d'accident élevé.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Boulevard Général de Gaulle, Fann, Dakar",
-    latitude: 14.7100,
-    longitude: -17.4450,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-4",
-    title: "Toiture de l'école endommagée",
-    description: "Toiture de l'école primaire endommagée par les intempéries. Réparation en cours par les autorités.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Grand Yoff, Dakar",
-    latitude: 14.7250,
-    longitude: -17.4420,
-    created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-5",
-    title: "Déchets accumulés",
-    description: "Accumulation importante de déchets non collectés depuis plusieurs semaines. Odeurs nauséabondes et risques sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Quartier Parcelles Assainies, Dakar",
-    latitude: 14.6650,
-    longitude: -17.4400,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-6",
-    title: "Panneau de signalisation manquant",
-    description: "Panneau de stop manquant à l'intersection, plusieurs accidents évités de justesse. Intervention urgente nécessaire.",
-    category: "securite",
-    status: "signale",
-    location_address: "Carrefour Liberté 6, Dakar",
-    latitude: 14.7000,
-    longitude: -17.4470,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-7",
-    title: "Canalisation réparée",
-    description: "Fuite d'eau réparée avec succès. La zone est maintenant sécurisée et l'eau est rétablie normalement.",
-    category: "eau",
-    status: "resolu",
-    location_address: "Avenue Blaise Diagne, Almadies, Dakar",
-    latitude: 14.7400,
-    longitude: -17.4320,
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-8",
-    title: "Éclairage rétabli",
-    description: "Tous les lampadaires ont été réparés. La zone est maintenant bien éclairée et sécurisée pour les piétons.",
-    category: "eclairage",
-    status: "resolu",
-    location_address: "Rue Mermoz, Point E, Dakar",
-    latitude: 14.7150,
-    longitude: -17.4380,
-    created_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-9",
-    title: "Route réparée",
-    description: "Nid-de-poule comblé et route refaite. La circulation est maintenant fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard du Général de Gaulle, Ouakam, Dakar",
-    latitude: 14.7300,
-    longitude: -17.4350,
-    created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-10",
-    title: "Centre de santé - Manque de matériel",
-    description: "Le centre de santé manque de matériel médical de base. Besoin urgent de fournitures pour soigner les patients.",
-    category: "sante",
-    status: "en_cours",
-    location_address: "Centre de santé de Pikine, Dakar",
-    latitude: 14.6750,
-    longitude: -17.4520,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-11",
-    title: "Éclairage défaillant - Zone commerciale",
-    description: "Plusieurs lampadaires éteints dans la zone commerciale, impactant la sécurité des commerces et des clients.",
-    category: "eclairage",
-    status: "signale",
-    location_address: "Marché Sandaga, Centre-ville, Dakar",
-    latitude: 14.6900,
-    longitude: -17.4430,
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-12",
-    title: "Arbre menaçant",
-    description: "Grand arbre penché menaçant de tomber sur la route. Risque pour les passants et les véhicules.",
-    category: "environnement",
-    status: "en_cours",
-    location_address: "Avenue Faidherbe, Plateau, Dakar",
-    latitude: 14.7050,
-    longitude: -17.4480,
-    created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-13",
-    title: "Route dégradée - Diamniadio",
-    description: "Route principale en mauvais état avec plusieurs nids-de-poule. Circulation difficile et dangereuse.",
-    category: "voirie",
-    status: "signale",
-    location_address: "Avenue de l'Indépendance, Diamniadio",
-    latitude: 14.7500,
-    longitude: -17.4000,
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-14",
-    title: "Éclairage public manquant",
-    description: "Absence totale d'éclairage public dans cette zone résidentielle. Sécurité des habitants compromise.",
-    category: "eclairage",
-    status: "en_cours",
-    location_address: "Zone résidentielle, Diamniadio",
-    latitude: 14.7600,
-    longitude: -17.3950,
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-15",
-    title: "Problème d'assainissement",
-    description: "Système d'assainissement défaillant causant des inondations lors des pluies. Risque sanitaire élevé.",
-    category: "eau",
-    status: "signale",
-    location_address: "Quartier Pikine Est, Pikine",
-    latitude: 14.7500,
-    longitude: -17.3800,
-    created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-16",
-    title: "École sans électricité",
-    description: "École primaire sans électricité depuis une semaine. Impact sur l'éducation des enfants.",
-    category: "education",
-    status: "en_cours",
-    location_address: "École primaire de Thiaroye, Thiaroye",
-    latitude: 14.7200,
-    longitude: -17.3600,
-    created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-17",
-    title: "Décharge sauvage",
-    description: "Décharge sauvage non autorisée causant des problèmes environnementaux et sanitaires.",
-    category: "environnement",
-    status: "signale",
-    location_address: "Zone industrielle, Rufisque",
-    latitude: 14.7100,
-    longitude: -17.2700,
-    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "mock-18",
-    title: "Route réparée - Diamniadio",
-    description: "Route principale récemment réparée. Circulation fluide et sécurisée.",
-    category: "voirie",
-    status: "resolu",
-    location_address: "Boulevard de Diamniadio, Diamniadio",
-    latitude: 14.7550,
-    longitude: -17.4050,
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export default function AuthorityDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -315,6 +114,7 @@ export default function AuthorityDashboard() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [updateComment, setUpdateComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [reportUpdates, setReportUpdates] = useState<any[]>([]);
   const [topCategories, setTopCategories] = useState<Array<{ name: string; count: number; value: string }>>([]);
 
@@ -327,6 +127,24 @@ export default function AuthorityDashboard() {
       filterReports();
     }
   }, [searchTerm, filterStatus]);
+
+  // Fermer les popups Leaflet quand le modal est ouvert
+  useEffect(() => {
+    if (showReportModal) {
+      // Fermer toutes les popups Leaflet ouvertes
+      const mapContainer = document.querySelector('.leaflet-container');
+      if (mapContainer) {
+        // Leaflet stocke les popups dans L.popup, on peut les fermer via l'API
+        const popups = document.querySelectorAll('.leaflet-popup');
+        popups.forEach((popup) => {
+          const closeButton = popup.querySelector('.leaflet-popup-close-button');
+          if (closeButton) {
+            (closeButton as HTMLElement).click();
+          }
+        });
+      }
+    }
+  }, [showReportModal]);
 
   const checkAuth = async () => {
     // Mode test : bypass des credentials en développement
@@ -373,47 +191,45 @@ export default function AuthorityDashboard() {
   };
 
   const fetchReports = async () => {
-    // Charger les données de Supabase
+    // Éviter les appels multiples simultanés
+    if (isFetching) return;
+    
+    setIsFetching(true);
+    setLoading(true);
+    
+    // Utiliser uniquement les données mockées
     try {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Normaliser les données mockées pour correspondre au format attendu
+      const normalizedReports = mockReportsMap.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
 
-      if (!error && data) {
-        // Combiner les données de Supabase avec les signalements simulés
-        // Exclure les mocks qui ont le même ID que les données de la DB
-        const dbReportIds = new Set(data.map((r: any) => r.id));
-        const filteredMocks = mockReports.filter(m => !dbReportIds.has(m.id));
-        const allReports = [...data, ...filteredMocks];
-        
-        setReports(allReports);
-        calculateStats(allReports);
-      } else {
-        // En cas d'erreur ou si pas de données, utiliser les mocks
-        setReports(mockReports);
-        calculateStats(mockReports);
-      }
+      // Trier par date de création (plus récent en premier)
+      normalizedReports.sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      
+      setReports(normalizedReports);
+      calculateStats(normalizedReports);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements:", error);
-      // En cas d'erreur, utiliser les signalements simulés
-      setReports(mockReports);
-      calculateStats(mockReports);
+      setReports([]);
+      calculateStats([]);
+    } finally {
+      setIsFetching(false);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const fetchReportUpdates = async (reportId: string) => {
-    const { data, error } = await supabase
-      .from("report_updates")
-      .select("*")
-      .eq("report_id", reportId)
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setReportUpdates(data);
-    }
+    // Pour les données mockées, on n'a pas de mises à jour historiques
+    // On peut créer une mise à jour factice si nécessaire
+    setReportUpdates([]);
   };
 
 
@@ -459,46 +275,32 @@ export default function AuthorityDashboard() {
   };
 
   const updateReportStatus = async (reportId: string, newStatus: "signale" | "en_cours" | "resolu", comment?: string) => {
-    const { error: updateError } = await supabase
-      .from("reports")
-      .update({
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-        resolved_by: newStatus === "resolu" ? profile?.full_name || "Autorité" : null,
-      })
-      .eq("id", reportId);
-
-    if (updateError) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le statut",
-        variant: "destructive",
+    // Mettre à jour uniquement dans l'état local (données mockées)
+    setReports((prevReports) => {
+      return prevReports.map((report) => {
+        if (report.id === reportId) {
+          return {
+            ...report,
+            status: newStatus,
+            updated_at: new Date().toISOString(),
+            resolved_by: newStatus === "resolu" ? profile?.full_name || "Autorité" : null,
+          };
+        }
+        return report;
       });
-      return;
-    }
+    });
 
-    // Créer une mise à jour publique
-    if (comment) {
-      const { error: updateCommentError } = await supabase.from("report_updates").insert({
-        report_id: reportId,
-        user_id: user?.id,
-        status: newStatus,
-        comment: comment,
-        is_public: true,
-      });
-
-      if (updateCommentError) {
-        console.error("Erreur lors de l'ajout du commentaire:", updateCommentError);
-      }
-    }
+    // Recalculer les stats
+    setReports((prevReports) => {
+      calculateStats(prevReports);
+      return prevReports;
+    });
 
     toast({
       title: "Succès",
       description: `Le signalement a été marqué comme "${statusConfig[newStatus].label}"`,
     });
 
-    // Rafraîchir les rapports
-    fetchReports();
     setShowReportModal(false);
     setUpdateComment("");
   };
@@ -730,7 +532,7 @@ export default function AuthorityDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="h-[400px] w-full relative overflow-hidden rounded-lg">
+              <div className={`h-[400px] w-full relative overflow-hidden rounded-lg ${showReportModal ? 'pointer-events-none opacity-60' : ''}`}>
                 {reports.filter((r) => r.latitude && r.longitude).length > 0 ? (
                   <LeafletMapContainer
                     center={DAKAR_CENTER}
@@ -738,7 +540,7 @@ export default function AuthorityDashboard() {
                     minZoom={9}
                     maxZoom={18}
                     style={{ height: "100%", width: "100%" }}
-                    scrollWheelZoom={true}
+                    scrollWheelZoom={!showReportModal}
                   >
                     <TileLayer
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -843,13 +645,24 @@ export default function AuthorityDashboard() {
               <CardDescription>Derniers signalements reçus</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {mockReports
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              {reports
+                .sort((a, b) => {
+                  const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                  const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                  return dateB - dateA;
+                })
                 .slice(0, 5)
                 .map((report) => {
                   const category = getCategory(report.category);
                   const status = getStatus(report.status);
                   const CategoryIcon = category.icon;
+
+                  // Les données sont déjà validées et nettoyées dans fetchReports
+                  const title = report.title || 'Signalement sans titre';
+                  const address = report.location_address || 'Adresse non spécifiée';
+                  const date = report.created_at 
+                    ? format(new Date(report.created_at), "dd MMM yyyy", { locale: fr })
+                    : 'Date inconnue';
 
                   return (
                     <div
@@ -865,17 +678,15 @@ export default function AuthorityDashboard() {
                         <CategoryIcon className="w-4 h-4" />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{report.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{report.location_address}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(report.created_at), "dd MMM yyyy", { locale: fr })}
-                        </p>
+                        <p className="font-medium text-sm truncate" title={title}>{title}</p>
+                        <p className="text-xs text-muted-foreground truncate" title={address}>{address}</p>
+                        <p className="text-xs text-muted-foreground">{date}</p>
                       </div>
                       <Badge className={status.color}>{status.label}</Badge>
                     </div>
                   );
                 })}
-              {mockReports.length === 0 && (
+              {reports.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4">Aucun signalement pour le moment</p>
               )}
             </CardContent>
@@ -1319,30 +1130,26 @@ export default function AuthorityDashboard() {
                       <Button
                         size="sm"
                         className="mt-2"
-                        onClick={async () => {
+                        onClick={() => {
                           if (updateComment.trim() && selectedReport.id) {
-                            const { error: updateCommentError } = await supabase.from("report_updates").insert({
+                            // Ajouter le commentaire dans l'état local (données mockées)
+                            const newUpdate = {
+                              id: `update-${Date.now()}`,
                               report_id: selectedReport.id,
-                              user_id: user?.id,
+                              user_id: user?.id || "autorite",
                               status: selectedReport.status,
                               comment: updateComment,
                               is_public: true,
+                              created_at: new Date().toISOString(),
+                            };
+                            
+                            setReportUpdates((prev) => [newUpdate, ...prev]);
+                            
+                            toast({
+                              title: "Succès",
+                              description: "Commentaire publié avec succès",
                             });
-
-                            if (updateCommentError) {
-                              toast({
-                                title: "Erreur",
-                                description: "Impossible de publier le commentaire",
-                                variant: "destructive",
-                              });
-                            } else {
-                              toast({
-                                title: "Succès",
-                                description: "Commentaire publié avec succès",
-                              });
-                              setUpdateComment("");
-                              fetchReportUpdates(selectedReport.id);
-                            }
+                            setUpdateComment("");
                           }
                         }}
                         disabled={!updateComment.trim()}

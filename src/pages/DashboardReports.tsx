@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { mockReportsMap, normalizeStatus } from "@/lib/mockData";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export default function DashboardReports() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -70,17 +72,39 @@ export default function DashboardReports() {
   };
 
   const fetchReports = async () => {
-    const { data, error } = await supabase
-      .from("reports")
-      .select("*")
-      .order("created_at", { ascending: false });
+    // Éviter les appels multiples simultanés
+    if (isFetching) return;
+    
+    setIsFetching(true);
+    setLoading(true);
+    
+    // Utiliser uniquement les données mockées
+    try {
+      // Normaliser les données mockées pour correspondre au format attendu
+      const normalizedReports = mockReportsMap.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
 
-    if (!error && data) {
-      setReports(data);
-      setFilteredReports(data);
+      // Trier par date de création (plus récent en premier)
+      normalizedReports.sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+      
+      setReports(normalizedReports);
+      setFilteredReports(normalizedReports);
+    } catch (error) {
+      console.error("Erreur lors du chargement des signalements:", error);
+      setReports([]);
+      setFilteredReports([]);
+    } finally {
+      setIsFetching(false);
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const filterReports = () => {
