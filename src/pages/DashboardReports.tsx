@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Link as LinkIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -217,6 +217,7 @@ export default function DashboardReports() {
                   <TableHead>Date</TableHead>
                   <TableHead>Adresse</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Hashblock</TableHead>
                   <TableHead>Agent</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -241,6 +242,18 @@ export default function DashboardReports() {
                       <TableCell className="text-sm">{report.location_address}</TableCell>
                       <TableCell>
                         <Badge className={status.color}>{status.label}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {report.hedera_hash ? (
+                          <div className="flex items-center space-x-1 max-w-[120px]">
+                            <LinkIcon className="h-3 w-3 text-primary flex-shrink-0" />
+                            <span className="font-mono truncate" title={report.hedera_hash}>
+                              {report.hedera_hash.substring(0, 12)}...
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">{report.assigned_agent || "-"}</TableCell>
                       <TableCell>

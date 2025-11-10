@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, MapPin, Clock, Droplets, Zap, Car, GraduationCap, Plus } from "lucide-react";
+import { Search, Filter, MapPin, Clock, Droplets, Zap, Car, GraduationCap, Plus, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { mockReportsSimple, getUserReports, mockReportsMap, normalizeStatus } from "@/lib/mockData";
 
@@ -51,6 +51,8 @@ export default function Reports() {
       location_address: report.location_address || report.location || '',
       location: report.location || report.location_address || '',
       image_url: report.image_url || report.image || '/placeholder.svg',
+      views: report.views || 0,
+      author: report.author || 'Utilisateur',
     }));
 
     // Normaliser les signalements mockés de la carte
@@ -60,15 +62,19 @@ export default function Reports() {
       location_address: report.location_address || report.location || '',
       location: report.location || report.location_address || '',
       image_url: report.image_url || report.image || '/placeholder.svg',
+      views: report.views || 0,
+      author: report.author || 'Utilisateur',
     }));
 
-    // Récupérer les signalements utilisateur depuis localStorage
+    // Récupérer les signalements utilisateur depuis localStorage (déjà migrés par getUserReports)
     const userReports = getUserReports().map((report) => ({
       ...report,
       status: normalizeStatus(report.status),
       location_address: report.location_address || report.location || '',
       location: report.location || report.location_address || '',
       image_url: report.image_url || report.image || '/placeholder.svg',
+      views: report.views || 0,
+      author: report.author || 'Utilisateur',
     }));
 
     // Combiner tous les signalements et trier par date (plus récent en premier)
@@ -91,6 +97,8 @@ export default function Reports() {
         location_address: report.location_address || report.location || '',
         location: report.location || report.location_address || '',
         image_url: report.image_url || report.image || '/placeholder.svg',
+        views: report.views || 0,
+        author: report.author || 'Utilisateur',
       }));
 
       const normalizedMockSimple = mockReportsSimple.map((report) => ({
@@ -99,6 +107,8 @@ export default function Reports() {
         location_address: report.location_address || report.location || '',
         location: report.location || report.location_address || '',
         image_url: report.image_url || report.image || '/placeholder.svg',
+        views: report.views || 0,
+        author: report.author || 'Utilisateur',
       }));
 
       const normalizedMockMap = mockReportsMap.map((report) => ({
@@ -107,6 +117,8 @@ export default function Reports() {
         location_address: report.location_address || report.location || '',
         location: report.location || report.location_address || '',
         image_url: report.image_url || report.image || '/placeholder.svg',
+        views: report.views || 0,
+        author: report.author || 'Utilisateur',
       }));
 
       const combined = [...userReports, ...normalizedMockMap, ...normalizedMockSimple];
@@ -284,9 +296,9 @@ export default function Reports() {
                         </Badge>
                         <div className="flex items-center text-sm text-muted-foreground">
                           <Clock className="h-3 w-3 mr-1" />
-                          {report.date ? new Date(report.date).toLocaleDateString('fr-FR') : new Date(report.created_at).toLocaleDateString('fr-FR')}
+                          {report.date ? new Date(report.date).toLocaleDateString('fr-FR') : (report.created_at ? new Date(report.created_at).toLocaleDateString('fr-FR') : 'Date inconnue')}
                         </div>
-                        {report.views && (
+                        {(report.views !== undefined && report.views !== null) && (
                           <div className="flex items-center text-sm text-muted-foreground">
                             <span>👁 {report.views} vues</span>
                           </div>
@@ -312,6 +324,18 @@ export default function Reports() {
                             Par {report.author}
                           </div>
                         )}
+                      </div>
+                      
+                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <LinkIcon className="h-3 w-3 text-primary flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-primary">Hashblock Hedera</p>
+                            <p className="text-xs text-muted-foreground truncate font-mono">
+                              {report.hedera_hash || 'En cours de génération...'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

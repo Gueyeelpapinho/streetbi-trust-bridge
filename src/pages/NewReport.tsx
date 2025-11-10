@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, MapPin, Upload, Send, ArrowLeft, Check, X, Loader2, Navigation } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { generateHederaHash } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -191,9 +192,13 @@ export default function NewReport() {
         });
       }
       
+      // Générer un hashblock Hedera simulé
+      const reportId = `user-report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const hederaHash = generateHederaHash(reportId);
+      
       // Créer le nouveau signalement
       const newReport = {
-        id: `user-report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: reportId,
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category,
@@ -207,6 +212,7 @@ export default function NewReport() {
         created_at: new Date().toISOString(),
         views: 0,
         author: "Utilisateur",
+        hedera_hash: hederaHash,
       };
       
       // Récupérer les signalements existants depuis localStorage

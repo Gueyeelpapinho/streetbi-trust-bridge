@@ -1,51 +1,10 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MapPin, Clock, Droplets, Zap, Car, GraduationCap } from "lucide-react";
+import { ArrowRight, MapPin, Clock, Droplets, Zap, Car, GraduationCap, Link as LinkIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const mockReports = [
-  {
-    id: 1,
-    title: "Fuite d'eau importante",
-    description: "Canalisation cassée sur l'avenue Bourguiba",
-    location: "Plateau, Dakar",
-    status: "pending",
-    date: "Il y a 2h",
-    category: "eau",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 2,
-    title: "Éclairage public défaillant",
-    description: "Plusieurs lampadaires ne fonctionnent plus",
-    location: "Médina, Dakar",
-    status: "in-progress",
-    date: "Il y a 5h",
-    category: "eclairage",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 3,
-    title: "Nid de poule dangereux",
-    description: "Route dégradée causant des accidents",
-    location: "Pikine, Dakar",
-    status: "pending",
-    date: "Il y a 1j",
-    category: "voirie",
-    image: "/placeholder.svg"
-  },
-  {
-    id: 4,
-    title: "École sans électricité",
-    description: "Panne électrique dans l'établissement depuis 3 jours",
-    location: "Guédiawaye, Dakar",
-    status: "resolved",
-    date: "Il y a 2j",
-    category: "education",
-    image: "/placeholder.svg"
-  }
-];
+import { mockReportsSimple, getUserReports, normalizeStatus } from "@/lib/mockData";
 
 const statusLabels = {
   pending: "Nouveau",
@@ -68,6 +27,76 @@ const categoryIcons = {
 
 export const RecentReports = () => {
   const navigate = useNavigate();
+  const [reports, setReports] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Charger les signalements récents (utilisateur + mockés)
+    const userReports = getUserReports().map((report) => ({
+      ...report,
+      status: normalizeStatus(report.status),
+      location_address: report.location_address || report.location || '',
+      location: report.location || report.location_address || '',
+      image_url: report.image_url || report.image || '/placeholder.svg',
+    }));
+
+    const normalizedMock = mockReportsSimple.map((report) => ({
+      ...report,
+      status: normalizeStatus(report.status),
+      location_address: report.location_address || report.location || '',
+      location: report.location || report.location_address || '',
+      image_url: report.image_url || report.image || '/placeholder.svg',
+    }));
+
+    // Combiner et prendre les 4 plus récents
+    const allReports = [...userReports, ...normalizedMock];
+    allReports.sort((a: any, b: any) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA;
+    });
+
+    setReports(allReports.slice(0, 4));
+  }, []);
+
+  // Écouter les changements dans localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const userReports = getUserReports().map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        location: report.location || report.location_address || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      const normalizedMock = mockReportsSimple.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        location: report.location || report.location_address || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      const allReports = [...userReports, ...normalizedMock];
+      allReports.sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      setReports(allReports.slice(0, 4));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userReportsUpdated', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userReportsUpdated', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <section className="py-16 bg-muted/30">
@@ -82,8 +111,11 @@ export const RecentReports = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {mockReports.map((report) => {
+          {reports.map((report) => {
             const CategoryIcon = categoryIcons[report.category as keyof typeof categoryIcons];
+            const status = report.status === "pending" || report.status === "signale" ? "pending" 
+              : report.status === "in-progress" || report.status === "en_cours" ? "in-progress"
+              : "resolved";
             
             return (
               <Card key={report.id} className="hover:shadow-card transition-all duration-300 hover:-translate-y-1 bg-gradient-card">
@@ -93,8 +125,8 @@ export const RecentReports = () => {
                       <div className="p-2 rounded-lg bg-primary/10">
                         <CategoryIcon className="h-4 w-4 text-primary" />
                       </div>
-                      <Badge className={statusColors[report.status as keyof typeof statusColors]}>
-                        {statusLabels[report.status as keyof typeof statusLabels]}
+                      <Badge className={statusColors[status as keyof typeof statusColors]}>
+                        {statusLabels[status as keyof typeof statusLabels]}
                       </Badge>
                     </div>
                   </div>
@@ -108,13 +140,27 @@ export const RecentReports = () => {
                   
                   <div className="flex items-center text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 mr-1" />
-                    {report.location}
+                    {report.location || report.location_address}
                   </div>
                   
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Clock className="h-3 w-3 mr-1" />
-                    {report.date}
+                    {report.date || new Date(report.created_at).toLocaleDateString('fr-FR')}
                   </div>
+                  
+                  {report.hedera_hash && (
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-2">
+                      <div className="flex items-center space-x-1">
+                        <LinkIcon className="h-3 w-3 text-primary flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-primary">Hashblock</p>
+                          <p className="text-xs text-muted-foreground truncate font-mono">
+                            {report.hedera_hash.substring(0, 15)}...
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <Button 
                     variant="ghost" 

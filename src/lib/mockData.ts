@@ -1,6 +1,8 @@
 // Données mockées complètes pour les signalements
 // Ces données sont utilisées quand les données Supabase ne sont pas disponibles
 
+import { generateHederaHash } from "./utils";
+
 export interface MockReport {
   id: string | number;
   title: string;
@@ -43,6 +45,7 @@ export const mockReportsSimple: MockReport[] = [
     longitude: -17.4550,
     views: 156,
     author: "Amadou Diop",
+    hedera_hash: generateHederaHash("1"),
   },
   {
     id: 2,
@@ -61,6 +64,7 @@ export const mockReportsSimple: MockReport[] = [
     views: 89,
     author: "Fatou Sall",
     assigned_agent: "SENELEC - Service Éclairage Public",
+    hedera_hash: generateHederaHash("2"),
   },
   {
     id: 3,
@@ -78,6 +82,7 @@ export const mockReportsSimple: MockReport[] = [
     longitude: -17.4450,
     views: 234,
     author: "Ousmane Ba",
+    hedera_hash: generateHederaHash("3"),
   },
   {
     id: 4,
@@ -100,6 +105,7 @@ export const mockReportsSimple: MockReport[] = [
     resolution_note: "Panne électrique résolue. Réparation du transformateur effectuée avec succès. L'électricité a été rétablie dans l'établissement.",
     resolution_cost: 250000,
     assigned_agent: "SENELEC - Service Public",
+    hedera_hash: generateHederaHash("4"),
   },
 ];
 
@@ -108,7 +114,39 @@ export const getUserReports = (): MockReport[] => {
   try {
     const stored = localStorage.getItem("userReports");
     if (stored) {
-      return JSON.parse(stored);
+      const reports = JSON.parse(stored);
+      // Migrer les signalements existants pour ajouter les informations manquantes
+      const migratedReports = reports.map((report: any) => {
+        // Ajouter un hashblock si manquant
+        if (!report.hedera_hash) {
+          report.hedera_hash = generateHederaHash(report.id || String(Date.now()));
+        }
+        // Ajouter views si manquant
+        if (report.views === undefined) {
+          report.views = 0;
+        }
+        // S'assurer que location_address existe
+        if (!report.location_address && report.location) {
+          report.location_address = report.location;
+        }
+        // S'assurer que location existe
+        if (!report.location && report.location_address) {
+          report.location = report.location_address;
+        }
+        // S'assurer que created_at existe
+        if (!report.created_at) {
+          report.created_at = new Date().toISOString();
+        }
+        return report;
+      });
+      
+      // Sauvegarder les signalements migrés si des modifications ont été faites
+      const needsMigration = reports.some((r: any) => !r.hedera_hash || r.views === undefined);
+      if (needsMigration) {
+        localStorage.setItem("userReports", JSON.stringify(migratedReports));
+      }
+      
+      return migratedReports;
     }
   } catch (error) {
     console.error("Erreur lors de la lecture des signalements utilisateur:", error);
@@ -129,6 +167,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4550,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-1"),
   },
   {
     id: "mock-2",
@@ -142,6 +181,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop",
     assigned_agent: "SENELEC - Service Éclairage Public",
+    hedera_hash: generateHederaHash("mock-2"),
   },
   {
     id: "mock-3",
@@ -154,6 +194,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4450,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-3"),
   },
   {
     id: "mock-4",
@@ -167,6 +208,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&h=600&fit=crop",
     assigned_agent: "Direction de l'Éducation",
+    hedera_hash: generateHederaHash("mock-4"),
   },
   {
     id: "mock-5",
@@ -179,6 +221,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4400,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-5"),
   },
   {
     id: "mock-6",
@@ -191,6 +234,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4470,
     created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-6"),
   },
   {
     id: "mock-7",
@@ -207,6 +251,7 @@ export const mockReportsMap: MockReport[] = [
     resolution_note: "Canalisation principale réparée. Remplacement du tronçon défectueux effectué avec succès.",
     resolution_cost: 150000,
     image_url: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-7"),
   },
   {
     id: "mock-8",
@@ -223,6 +268,7 @@ export const mockReportsMap: MockReport[] = [
     resolution_note: "Remplacement des ampoules défectueuses et vérification de l'ensemble du réseau d'éclairage.",
     resolution_cost: 75000,
     image_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-8"),
   },
   {
     id: "mock-9",
@@ -239,6 +285,7 @@ export const mockReportsMap: MockReport[] = [
     resolution_note: "Réfection complète de la chaussée sur 50 mètres. Asphaltage effectué selon les normes.",
     resolution_cost: 450000,
     image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-9"),
   },
   {
     id: "mock-10",
@@ -252,6 +299,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=800&h=600&fit=crop",
     assigned_agent: "Ministère de la Santé",
+    hedera_hash: generateHederaHash("mock-10"),
   },
   {
     id: "mock-11",
@@ -264,6 +312,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4430,
     created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-11"),
   },
   {
     id: "mock-12",
@@ -277,6 +326,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&h=600&fit=crop",
     assigned_agent: "Service des Espaces Verts",
+    hedera_hash: generateHederaHash("mock-12"),
   },
   {
     id: "mock-13",
@@ -289,6 +339,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.4000,
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-13"),
   },
   {
     id: "mock-14",
@@ -302,6 +353,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&h=600&fit=crop",
     assigned_agent: "SENELEC - Service Éclairage Public",
+    hedera_hash: generateHederaHash("mock-14"),
   },
   {
     id: "mock-15",
@@ -314,6 +366,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.3800,
     created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-15"),
   },
   {
     id: "mock-16",
@@ -327,6 +380,7 @@ export const mockReportsMap: MockReport[] = [
     created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&h=600&fit=crop",
     assigned_agent: "SENELEC - Service Public",
+    hedera_hash: generateHederaHash("mock-16"),
   },
   {
     id: "mock-17",
@@ -339,6 +393,7 @@ export const mockReportsMap: MockReport[] = [
     longitude: -17.2700,
     created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     image_url: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-17"),
   },
   {
     id: "mock-18",
@@ -355,6 +410,7 @@ export const mockReportsMap: MockReport[] = [
     resolution_note: "Réparation complète de la route effectuée. Signalisation routière remise en place.",
     resolution_cost: 320000,
     image_url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+    hedera_hash: generateHederaHash("mock-18"),
   },
 ];
 
