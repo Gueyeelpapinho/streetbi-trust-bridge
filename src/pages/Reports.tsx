@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, MapPin, Clock, Droplets, Zap, Car, GraduationCap, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { mockReportsSimple } from "@/lib/mockData";
+import { mockReportsSimple, getUserReports, mockReportsMap, normalizeStatus } from "@/lib/mockData";
 
 const statusLabels = {
   pending: "Nouveau",
@@ -40,8 +40,102 @@ export default function Reports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [allReports, setAllReports] = useState<any[]>([]);
 
-  const filteredReports = mockReportsSimple.filter(report => {
+  // Charger tous les signalements (mockés + utilisateur)
+  useEffect(() => {
+    // Normaliser les signalements mockés simples
+    const normalizedMockSimple = mockReportsSimple.map((report) => ({
+      ...report,
+      status: normalizeStatus(report.status),
+      location_address: report.location_address || report.location || '',
+      location: report.location || report.location_address || '',
+      image_url: report.image_url || report.image || '/placeholder.svg',
+    }));
+
+    // Normaliser les signalements mockés de la carte
+    const normalizedMockMap = mockReportsMap.map((report) => ({
+      ...report,
+      status: normalizeStatus(report.status),
+      location_address: report.location_address || report.location || '',
+      location: report.location || report.location_address || '',
+      image_url: report.image_url || report.image || '/placeholder.svg',
+    }));
+
+    // Récupérer les signalements utilisateur depuis localStorage
+    const userReports = getUserReports().map((report) => ({
+      ...report,
+      status: normalizeStatus(report.status),
+      location_address: report.location_address || report.location || '',
+      location: report.location || report.location_address || '',
+      image_url: report.image_url || report.image || '/placeholder.svg',
+    }));
+
+    // Combiner tous les signalements et trier par date (plus récent en premier)
+    const combined = [...userReports, ...normalizedMockMap, ...normalizedMockSimple];
+    combined.sort((a: any, b: any) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA;
+    });
+
+    setAllReports(combined);
+  }, []);
+
+  // Écouter les changements dans localStorage pour mettre à jour la liste
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const userReports = getUserReports().map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        location: report.location || report.location_address || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      const normalizedMockSimple = mockReportsSimple.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        location: report.location || report.location_address || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      const normalizedMockMap = mockReportsMap.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        location: report.location || report.location_address || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      const combined = [...userReports, ...normalizedMockMap, ...normalizedMockSimple];
+      combined.sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      setAllReports(combined);
+    };
+
+    // Écouter les événements de stockage (quand localStorage change dans un autre onglet)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Écouter l'événement personnalisé déclenché lors de la création d'un signalement
+    window.addEventListener('userReportsUpdated', handleStorageChange);
+    
+    // Vérifier aussi périodiquement (pour les changements dans le même onglet)
+    const interval = setInterval(handleStorageChange, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userReportsUpdated', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const filteredReports = allReports.filter(report => {
     const location = report.location || report.location_address || "";
     const matchesSearch = report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -167,10 +261,20 @@ export default function Reports() {
               <Card key={report.id} className="hover:shadow-card transition-all duration-300 cursor-pointer" onClick={() => navigate(`/report/${report.id}`)}>
                 <CardContent className="pt-6">
                   <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Image placeholder */}
-                    <div className="w-full lg:w-48 h-32 bg-muted rounded-lg flex items-center justify-center">
-                      <CategoryIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
+                    {/* Image */}
+                    {report.image_url && report.image_url !== '/placeholder.svg' ? (
+                      <div className="w-full lg:w-48 h-32 rounded-lg overflow-hidden">
+                        <img 
+                          src={report.image_url} 
+                          alt={report.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full lg:w-48 h-32 bg-muted rounded-lg flex items-center justify-center">
+                        <CategoryIcon className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
                     
                     {/* Content */}
                     <div className="flex-1 space-y-3">

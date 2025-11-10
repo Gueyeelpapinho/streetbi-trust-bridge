@@ -151,6 +151,8 @@ export default function Auth() {
                       title: "Connexion réussie (Mode Test)",
                       description: "Bienvenue sur StreetBi - Compte test créé",
                     });
+                    // Rediriger vers la page d'accueil
+                    setTimeout(() => navigate("/"), 1000);
                   } else {
                     // Même si ça échoue, on affiche le succès en mode test
                     toast({
@@ -174,6 +176,8 @@ export default function Auth() {
                   title: "Connexion réussie (Mode Test)",
                   description: "Bienvenue sur StreetBi",
                 });
+                // Rediriger vers la page d'accueil
+                setTimeout(() => navigate("/"), 1000);
               }
             } catch (error) {
               // En cas d'erreur quelconque, on considère que c'est OK en mode test
@@ -202,6 +206,8 @@ export default function Auth() {
                 title: "Connexion réussie",
                 description: "Bienvenue sur StreetBi",
               });
+              // Rediriger vers la page d'accueil
+              setTimeout(() => navigate("/"), 1000);
             }
           }
         }

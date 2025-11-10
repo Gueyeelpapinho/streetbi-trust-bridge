@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { mockReportsMap, normalizeStatus } from "@/lib/mockData";
+import { mockReportsMap, normalizeStatus, getUserReports } from "@/lib/mockData";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -197,25 +197,36 @@ export default function AuthorityDashboard() {
     setIsFetching(true);
     setLoading(true);
     
-    // Utiliser uniquement les données mockées
+    // Utiliser les données mockées + les signalements utilisateur depuis localStorage
     try {
       // Normaliser les données mockées pour correspondre au format attendu
-      const normalizedReports = mockReportsMap.map((report) => ({
+      const normalizedMockReports = mockReportsMap.map((report) => ({
         ...report,
         status: normalizeStatus(report.status),
         location_address: report.location_address || report.location || '',
         image_url: report.image_url || report.image || '/placeholder.svg',
       }));
 
+      // Récupérer les signalements utilisateur depuis localStorage
+      const userReports = getUserReports().map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      // Combiner les deux sources de données
+      const allReports = [...userReports, ...normalizedMockReports];
+
       // Trier par date de création (plus récent en premier)
-      normalizedReports.sort((a: any, b: any) => {
+      allReports.sort((a: any, b: any) => {
         const dateA = new Date(a.created_at || 0).getTime();
         const dateB = new Date(b.created_at || 0).getTime();
         return dateB - dateA;
       });
       
-      setReports(normalizedReports);
-      calculateStats(normalizedReports);
+      setReports(allReports);
+      calculateStats(allReports);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements:", error);
       setReports([]);
@@ -275,9 +286,9 @@ export default function AuthorityDashboard() {
   };
 
   const updateReportStatus = async (reportId: string, newStatus: "signale" | "en_cours" | "resolu", comment?: string) => {
-    // Mettre à jour uniquement dans l'état local (données mockées)
+    // Mettre à jour dans l'état local
     setReports((prevReports) => {
-      return prevReports.map((report) => {
+      const updatedReports = prevReports.map((report) => {
         if (report.id === reportId) {
           return {
             ...report,
@@ -288,12 +299,30 @@ export default function AuthorityDashboard() {
         }
         return report;
       });
-    });
 
-    // Recalculer les stats
-    setReports((prevReports) => {
-      calculateStats(prevReports);
-      return prevReports;
+      // Si c'est un signalement utilisateur (commence par "user-report-"), mettre à jour localStorage
+      if (reportId.startsWith("user-report-")) {
+        try {
+          const userReports = getUserReports();
+          const updatedUserReports = userReports.map((report) => {
+            if (report.id === reportId) {
+              return {
+                ...report,
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+                resolved_by: newStatus === "resolu" ? profile?.full_name || "Autorité" : null,
+              };
+            }
+            return report;
+          });
+          localStorage.setItem("userReports", JSON.stringify(updatedUserReports));
+        } catch (error) {
+          console.error("Erreur lors de la mise à jour dans localStorage:", error);
+        }
+      }
+
+      calculateStats(updatedReports);
+      return updatedReports;
     });
 
     toast({

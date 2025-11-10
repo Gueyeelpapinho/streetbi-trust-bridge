@@ -179,27 +179,76 @@ export default function NewReport() {
   const handleSubmit = async () => {
     setLoading(true);
     
-    // Simulation d'un envoi réussi avec délai pour rendre l'expérience réaliste
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Simuler l'upload de la photo
-    if (formData.image) {
+    try {
+      // Convertir l'image en base64 pour le stockage
+      let imageBase64 = null;
+      if (formData.image) {
+        const reader = new FileReader();
+        imageBase64 = await new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(formData.image!);
+        });
+      }
+      
+      // Créer le nouveau signalement
+      const newReport = {
+        id: `user-report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category,
+        status: "signale" as const,
+        location_address: formData.location.trim(),
+        location: formData.location.trim(),
+        latitude: formData.latitude!,
+        longitude: formData.longitude!,
+        image_url: imageBase64 || "/placeholder.svg",
+        image: imageBase64 || "/placeholder.svg",
+        created_at: new Date().toISOString(),
+        views: 0,
+        author: "Utilisateur",
+      };
+      
+      // Récupérer les signalements existants depuis localStorage
+      const existingReports = JSON.parse(
+        localStorage.getItem("userReports") || "[]"
+      );
+      
+      // Ajouter le nouveau signalement
+      existingReports.push(newReport);
+      
+      // Sauvegarder dans localStorage
+      localStorage.setItem("userReports", JSON.stringify(existingReports));
+      
+      // Déclencher un événement personnalisé pour notifier les autres composants
+      window.dispatchEvent(new Event('userReportsUpdated'));
+      
+      // Simulation d'un envoi réussi avec délai pour rendre l'expérience réaliste
       await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Simuler l'enregistrement sur la blockchain
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Afficher le message de succès
+      toast({
+        title: "✅ Signalement envoyé avec succès !",
+        description: "Votre signalement a été enregistré. Merci pour votre contribution !",
+      });
+      
+      // Rediriger vers la page des signalements après un court délai
+      setTimeout(() => {
+        navigate("/reports");
+      }, 1000);
+    } catch (error) {
+      console.error("Erreur lors de l'enregistrement:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'enregistrer le signalement. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-    
-    // Simuler l'enregistrement sur la blockchain
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Afficher le message de succès
-    toast({
-      title: "✅ Signalement envoyé avec succès !",
-      description: "Votre signalement a été enregistré sur la blockchain Hedera. Merci pour votre contribution !",
-    });
-    
-    // Rediriger vers la page des signalements après un court délai
-    setTimeout(() => {
-      navigate("/reports");
-    }, 2000);
   };
 
   const renderStep = () => {

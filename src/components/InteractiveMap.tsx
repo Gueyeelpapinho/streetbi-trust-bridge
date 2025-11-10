@@ -11,7 +11,7 @@ import { fr } from "date-fns/locale";
 import "leaflet/dist/leaflet.css";
 import { MapContainer as LeafletMapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
-import { mockReportsMap } from "@/lib/mockData";
+import { mockReportsMap, getUserReports, normalizeStatus } from "@/lib/mockData";
 
 // Fix pour les icônes par défaut de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -86,6 +86,26 @@ export const InteractiveMap = () => {
   useEffect(() => {
     // Charger les données en arrière-plan
     fetchReports();
+
+    // Écouter les changements dans localStorage pour mettre à jour la carte
+    const handleStorageChange = () => {
+      fetchReports();
+    };
+
+    // Vérifier périodiquement les changements (pour les changements dans le même onglet)
+    const interval = setInterval(handleStorageChange, 2000);
+
+    // Écouter les événements de stockage (quand localStorage change dans un autre onglet)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Écouter l'événement personnalisé déclenché lors de la création d'un signalement
+    window.addEventListener('userReportsUpdated', handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userReportsUpdated', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -98,23 +118,37 @@ export const InteractiveMap = () => {
   }, [selectedReport]);
 
   const fetchReports = async () => {
-    // Charger les données de Supabase en arrière-plan (non-bloquant)
-    // Ne pas attendre Supabase pour afficher la carte
+    // Charger les données mockées + les signalements utilisateur depuis localStorage
     try {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("*")
-        .not("latitude", "is", null)
-        .not("longitude", "is", null)
-        .order("created_at", { ascending: false });
+      // Normaliser les signalements mockés
+      const normalizedMockReports = mockReportsMap.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
 
-      if (!error && data && data.length > 0) {
-        // Combiner les données de Supabase avec les signalements simulés
-        const dbReportIds = new Set(data.map((r: any) => r.id));
-        const filteredMocks = mockReportsMap.filter(m => !dbReportIds.has(m.id));
-        const allReports = [...data, ...filteredMocks];
-        setReports(allReports);
-      }
+      // Récupérer les signalements utilisateur depuis localStorage
+      const userReports = getUserReports()
+        .map((report) => ({
+          ...report,
+          status: normalizeStatus(report.status),
+          location_address: report.location_address || report.location || '',
+          image_url: report.image_url || report.image || '/placeholder.svg',
+        }))
+        .filter((report) => report.latitude && report.longitude); // Filtrer ceux avec coordonnées GPS
+
+      // Combiner tous les signalements
+      const allReports = [...userReports, ...normalizedMockReports];
+
+      // Trier par date (plus récent en premier)
+      allReports.sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at || 0).getTime();
+        const dateB = new Date(b.created_at || 0).getTime();
+        return dateB - dateA;
+      });
+
+      setReports(allReports);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements:", error);
       // En cas d'erreur, garder les signalements simulés

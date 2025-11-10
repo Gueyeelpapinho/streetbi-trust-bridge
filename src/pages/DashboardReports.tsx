@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { mockReportsMap, normalizeStatus } from "@/lib/mockData";
+import { mockReportsMap, normalizeStatus, getUserReports } from "@/lib/mockData";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,25 +78,36 @@ export default function DashboardReports() {
     setIsFetching(true);
     setLoading(true);
     
-    // Utiliser uniquement les données mockées
+    // Utiliser les données mockées + les signalements utilisateur depuis localStorage
     try {
       // Normaliser les données mockées pour correspondre au format attendu
-      const normalizedReports = mockReportsMap.map((report) => ({
+      const normalizedMockReports = mockReportsMap.map((report) => ({
         ...report,
         status: normalizeStatus(report.status),
         location_address: report.location_address || report.location || '',
         image_url: report.image_url || report.image || '/placeholder.svg',
       }));
 
+      // Récupérer les signalements utilisateur depuis localStorage
+      const userReports = getUserReports().map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+        location_address: report.location_address || report.location || '',
+        image_url: report.image_url || report.image || '/placeholder.svg',
+      }));
+
+      // Combiner les deux sources de données
+      const allReports = [...userReports, ...normalizedMockReports];
+
       // Trier par date de création (plus récent en premier)
-      normalizedReports.sort((a: any, b: any) => {
+      allReports.sort((a: any, b: any) => {
         const dateA = new Date(a.created_at || 0).getTime();
         const dateB = new Date(b.created_at || 0).getTime();
         return dateB - dateA;
       });
       
-      setReports(normalizedReports);
-      setFilteredReports(normalizedReports);
+      setReports(allReports);
+      setFilteredReports(allReports);
     } catch (error) {
       console.error("Erreur lors du chargement des signalements:", error);
       setReports([]);
