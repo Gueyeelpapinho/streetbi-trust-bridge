@@ -147,16 +147,16 @@ export default function DashboardAnalytics() {
                       <span className="text-2xl font-bold">{stat.count}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-sm">
-                      <div className="bg-red-500/10 rounded p-2 text-center">
-                        <div className="text-red-500 font-medium">{stat.signale}</div>
+                      <div className="bg-status-pending/10 rounded p-2 text-center">
+                        <div className="text-status-pending font-medium">{stat.signale}</div>
                         <div className="text-muted-foreground">Signalés</div>
                       </div>
-                      <div className="bg-yellow-500/10 rounded p-2 text-center">
-                        <div className="text-yellow-500 font-medium">{stat.en_cours}</div>
+                      <div className="bg-status-in-progress/10 rounded p-2 text-center">
+                        <div className="text-status-in-progress font-medium">{stat.en_cours}</div>
                         <div className="text-muted-foreground">En cours</div>
                       </div>
-                      <div className="bg-green-500/10 rounded p-2 text-center">
-                        <div className="text-green-500 font-medium">{stat.resolu}</div>
+                      <div className="bg-status-resolved/10 rounded p-2 text-center">
+                        <div className="text-status-resolved font-medium">{stat.resolu}</div>
                         <div className="text-muted-foreground">Résolus</div>
                       </div>
                     </div>

@@ -2,15 +2,37 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, MapPin, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { mockReportsSimple, getUserReports, mockReportsMap } from "@/lib/mockData";
 import dakarStreet1 from "@/assets/dakar-street-1.jpg";
 import dakarStreet2 from "@/assets/dakar-street-2.jpg";
 import dakarStreet3 from "@/assets/dakar-street-3.jpg";
+// Nouvelles images de problèmes urbains à ajouter dans /src/assets/
+// 1. dakar-issue-1.jpg - Image de destruction/débris (dégâts importants, matériaux brûlés)
+// 2. dakar-issue-2.jpg - Image de rue avec travaux/inondation (rue perturbée, flaques d'eau, engins de chantier)
+// 3. dakar-issue-3.jpg - Image à fournir par l'utilisateur
+// 4. dakar-issue-4.jpg - Image à fournir par l'utilisateur
+// Note: Utilisez des images placeholder temporaires si les fichiers n'existent pas encore
+import dakarIssue1 from "@/assets/dakar-issue-1.jpg";
+import dakarIssue2 from "@/assets/dakar-issue-2.jpg";
+import dakarIssue3 from "@/assets/dakar-issue-3.jpg";
+import dakarIssue4 from "@/assets/dakar-issue-4.jpg";
 
 export const HeroSection = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [totalReports, setTotalReports] = useState(0);
   
-  const images = [dakarStreet1, dakarStreet2, dakarStreet3];
+  // Carrousel avec toutes les images (3 images de rues + 4 images de problèmes urbains)
+  // Les images de problèmes urbains seront ajoutées au carrousel une fois les fichiers disponibles
+  const images = [
+    dakarStreet1, 
+    dakarStreet2, 
+    dakarStreet3,
+    dakarIssue1, // Destruction/débris
+    dakarIssue2, // Rue avec travaux/inondation
+    dakarIssue3, // À fournir
+    dakarIssue4, // À fournir
+  ].filter(Boolean); // Filtrer les valeurs undefined si certaines images n'existent pas encore
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -18,6 +40,31 @@ export const HeroSection = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, [images.length]);
+
+  useEffect(() => {
+    const calculateTotal = () => {
+      const userReports = getUserReports();
+      const total = userReports.length + mockReportsMap.length + mockReportsSimple.length;
+      setTotalReports(total);
+    };
+
+    calculateTotal();
+
+    // Écouter les changements dans localStorage
+    const handleStorageChange = () => {
+      calculateTotal();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userReportsUpdated', handleStorageChange);
+    const interval = setInterval(calculateTotal, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userReportsUpdated', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <section className="relative py-20 md:py-32 bg-gradient-hero overflow-hidden">
@@ -78,7 +125,7 @@ export const HeroSection = () => {
                 >
                   <img
                     src={image}
-                    alt={`Dakar Street ${index + 1}`}
+                    alt={index < 3 ? `Dakar Street ${index + 1}` : `Problème urbain ${index - 2}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -101,7 +148,7 @@ export const HeroSection = () => {
             
             {/* Floating stats */}
             <div className="absolute -bottom-8 -left-8 bg-white rounded-xl p-4 shadow-xl">
-              <div className="text-2xl font-bold text-primary">1,247</div>
+              <div className="text-2xl font-bold text-primary">{totalReports.toLocaleString('fr-FR')}</div>
               <div className="text-sm text-muted-foreground">Signalements</div>
             </div>
           </div>

@@ -32,9 +32,9 @@ const categoryIcons = {
 };
 
 const statusColors = {
-  signale: "#FFCD00", // Jaune
-  en_cours: "#0066FF", // Bleu
-  resolu: "#00A651", // Vert
+  signale: "#F59E0B", // Vibrant amber
+  en_cours: "#3B82F6", // Bright blue
+  resolu: "#10B981", // Modern emerald
 };
 
 const statusLabels = {

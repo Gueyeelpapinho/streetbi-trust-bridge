@@ -64,15 +64,15 @@ const categories = [
 ];
 
 const statusConfig = {
-  signale: { label: "Signalé", color: "bg-red-500" },
-  en_cours: { label: "En cours", color: "bg-yellow-500" },
-  resolu: { label: "Résolu", color: "bg-green-500" },
+  signale: { label: "Signalé", color: "bg-status-pending" },
+  en_cours: { label: "En cours", color: "bg-status-in-progress" },
+  resolu: { label: "Résolu", color: "bg-status-resolved" },
 };
 
 const statusColors = {
-  signale: "#FFCD00", // Jaune
-  en_cours: "#0066FF", // Bleu
-  resolu: "#00A651", // Vert
+  signale: "#F59E0B", // Vibrant amber
+  en_cours: "#3B82F6", // Bright blue
+  resolu: "#10B981", // Modern emerald
 };
 
 const statusLabels = {

@@ -168,6 +168,14 @@ export default function Reports() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
+  // Calculer les statistiques réelles à partir de tous les signalements
+  const stats = {
+    total: allReports.length,
+    pending: allReports.filter(r => r.status === "pending" || r.status === "signale").length,
+    inProgress: allReports.filter(r => r.status === "in-progress" || r.status === "en_cours").length,
+    resolved: allReports.filter(r => r.status === "resolved" || r.status === "resolu").length,
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -234,25 +242,25 @@ export default function Reports() {
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-primary">1,247</div>
+              <div className="text-2xl font-bold text-primary">{stats.total.toLocaleString('fr-FR')}</div>
               <div className="text-sm text-muted-foreground">Total signalements</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-status-pending">23</div>
+              <div className="text-2xl font-bold text-status-pending">{stats.pending.toLocaleString('fr-FR')}</div>
               <div className="text-sm text-muted-foreground">En attente</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-status-in-progress">15</div>
+              <div className="text-2xl font-bold text-status-in-progress">{stats.inProgress.toLocaleString('fr-FR')}</div>
               <div className="text-sm text-muted-foreground">En cours</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-status-resolved">1,209</div>
+              <div className="text-2xl font-bold text-status-resolved">{stats.resolved.toLocaleString('fr-FR')}</div>
               <div className="text-sm text-muted-foreground">Résolus</div>
             </CardContent>
           </Card>

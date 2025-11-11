@@ -13,22 +13,22 @@ import { getMockReportById, normalizeStatus } from "@/lib/mockData";
 
 const categories = [
   { value: "eau", label: "Eau et assainissement", color: "bg-blue-500" },
-  { value: "voirie", label: "Voirie et transport", color: "bg-gray-500" },
-  { value: "eclairage", label: "Éclairage public", color: "bg-yellow-500" },
-  { value: "sante", label: "Santé publique", color: "bg-red-500" },
-  { value: "education", label: "Éducation", color: "bg-green-500" },
-  { value: "environnement", label: "Environnement", color: "bg-emerald-500" },
+  { value: "voirie", label: "Voirie et transport", color: "bg-slate-500" },
+  { value: "eclairage", label: "Éclairage public", color: "bg-amber-500" },
+  { value: "sante", label: "Santé publique", color: "bg-rose-500" },
+  { value: "education", label: "Éducation", color: "bg-emerald-500" },
+  { value: "environnement", label: "Environnement", color: "bg-teal-500" },
   { value: "securite", label: "Sécurité", color: "bg-orange-500" },
-  { value: "autre", label: "Autre", color: "bg-purple-500" },
+  { value: "autre", label: "Autre", color: "bg-violet-500" },
 ];
 
 const statusConfig = {
-  signale: { label: "Signalé", color: "bg-red-500" },
-  en_cours: { label: "En cours", color: "bg-yellow-500" },
-  resolu: { label: "Résolu", color: "bg-green-500" },
-  pending: { label: "Signalé", color: "bg-red-500" },
-  "in-progress": { label: "En cours", color: "bg-yellow-500" },
-  resolved: { label: "Résolu", color: "bg-green-500" },
+  signale: { label: "Signalé", color: "bg-status-pending" },
+  en_cours: { label: "En cours", color: "bg-status-in-progress" },
+  resolu: { label: "Résolu", color: "bg-status-resolved" },
+  pending: { label: "Signalé", color: "bg-status-pending" },
+  "in-progress": { label: "En cours", color: "bg-status-in-progress" },
+  resolved: { label: "Résolu", color: "bg-status-resolved" },
 };
 
 export default function ReportDetail() {

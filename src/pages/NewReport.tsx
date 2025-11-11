@@ -27,13 +27,13 @@ L.Icon.Default.mergeOptions({
 
 const categories = [
   { value: "eau", label: "Eau et assainissement", color: "bg-blue-500" },
-  { value: "voirie", label: "Voirie et transport", color: "bg-gray-500" },
-  { value: "eclairage", label: "Éclairage public", color: "bg-yellow-500" },
-  { value: "sante", label: "Santé publique", color: "bg-red-500" },
-  { value: "education", label: "Éducation", color: "bg-green-500" },
-  { value: "environnement", label: "Environnement", color: "bg-emerald-500" },
+  { value: "voirie", label: "Voirie et transport", color: "bg-slate-500" },
+  { value: "eclairage", label: "Éclairage public", color: "bg-amber-500" },
+  { value: "sante", label: "Santé publique", color: "bg-rose-500" },
+  { value: "education", label: "Éducation", color: "bg-emerald-500" },
+  { value: "environnement", label: "Environnement", color: "bg-teal-500" },
   { value: "securite", label: "Sécurité", color: "bg-orange-500" },
-  { value: "autre", label: "Autre", color: "bg-purple-500" },
+  { value: "autre", label: "Autre", color: "bg-violet-500" },
 ];
 
 // Coordonnées de Dakar par défaut

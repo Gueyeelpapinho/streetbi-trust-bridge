@@ -16,9 +16,9 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const statusConfig = {
-  signale: { label: "Signalé", color: "bg-red-500" },
-  en_cours: { label: "En cours", color: "bg-yellow-500" },
-  resolu: { label: "Résolu", color: "bg-green-500" },
+  signale: { label: "Signalé", color: "bg-status-pending" },
+  en_cours: { label: "En cours", color: "bg-status-in-progress" },
+  resolu: { label: "Résolu", color: "bg-status-resolved" },
 };
 
 export default function DashboardReportDetail() {

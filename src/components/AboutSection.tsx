@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, Users, Zap, Globe } from "lucide-react";
+import { mockReportsSimple, getUserReports, mockReportsMap, normalizeStatus } from "@/lib/mockData";
 
 const features = [
   {
@@ -25,6 +27,51 @@ const features = [
 ];
 
 export const AboutSection = () => {
+  const [stats, setStats] = useState({
+    total: 0,
+    resolved: 0,
+    resolutionRate: 0,
+  });
+
+  useEffect(() => {
+    const calculateStats = () => {
+      // Récupérer tous les signalements
+      const userReports = getUserReports();
+      const allReports = [...userReports, ...mockReportsMap, ...mockReportsSimple];
+      
+      // Normaliser les statuts
+      const normalizedReports = allReports.map((report) => ({
+        ...report,
+        status: normalizeStatus(report.status),
+      }));
+
+      const total = normalizedReports.length;
+      const resolved = normalizedReports.filter(
+        (r) => r.status === "resolu" || r.status === "resolved"
+      ).length;
+      const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
+      setStats({ total, resolved, resolutionRate });
+    };
+
+    calculateStats();
+
+    // Écouter les changements dans localStorage
+    const handleStorageChange = () => {
+      calculateStats();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userReportsUpdated', handleStorageChange);
+    const interval = setInterval(calculateStats, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userReportsUpdated', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <section className="py-16 bg-background">
       <div className="container">
@@ -70,11 +117,11 @@ export const AboutSection = () => {
           </p>
           <div className="flex items-center justify-center space-x-8 mt-8">
             <div className="text-center">
-              <div className="text-3xl font-bold">1,247+</div>
+              <div className="text-3xl font-bold">{stats.total.toLocaleString('fr-FR')}+</div>
               <div className="text-sm opacity-80">Signalements traités</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">89%</div>
+              <div className="text-3xl font-bold">{stats.resolutionRate}%</div>
               <div className="text-sm opacity-80">Taux de résolution</div>
             </div>
             <div className="text-center">
