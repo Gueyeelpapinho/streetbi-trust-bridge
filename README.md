@@ -1,73 +1,53 @@
-# Welcome to your Lovable project
+# StreetBi – Trust Bridge
+StreetBi est une plateforme citoyenne de signalement et de traçabilité, conçue pour renforcer la transparence entre les autorités et les citoyens. Grâce à l’intégration de la blockchain, chaque donnée collectée devient vérifiable, attribuée et auditable.
 
-## Project info
+## Objectifs🚀
+° Permettre aux citoyens de signaler des problèmes en temps réel (infrastructures, services, incidents).
 
-**URL**: https://lovable.dev/projects/580c7107-a02f-447c-a42a-248347ef5337
+° Offrir un suivi transparent de chaque signalement : de la déclaration à la résolution.
 
-## How can I edit this code?
+° Garantir la traçabilité des décisions et des flux financiers côté autorités.
 
-There are several ways of editing your application.
+° Créer un pont de confiance entre les acteurs publics et les communautés locales.
 
-**Use Lovable**
+## Fonctionnalités clés
+📱 Interface de signalement citoyen (web/mobile)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/580c7107-a02f-447c-a42a-248347ef5337) and start prompting.
+🔗 Enregistrement des données sur blockchain (Hedera)
 
-Changes made via Lovable will be committed automatically to this repo.
+🕵️‍♂️ Suivi de l’évolution des signalements
 
-**Use your preferred IDE**
+🧾 Attribution et auditabilité des données
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+📊 Tableau de bord pour les autorités locales
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+🏛️ Cas d’usage
+L’affaire Khalifa Sall à Dakar a révélé les limites d’une gestion municipale opaque. StreetBi propose une alternative : une traçabilité claire des décisions et des finances, accessible à tous.
 
-Follow these steps:
+🛠️ Technologies utilisées
+Composant	Technologie
+### Frontend:
+React + TypeScript + ShadCN
+### Backend:	
+Node.js / Express / Vite
+### Blockchain:
+Hedera SDK
+### Authentification:
+Wallet connect / JWT
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+📦 Installation
+bash
+git clone https://github.com/Gueyeelpapinho/streetbi-trust-bridge.git
+cd streetbi-trust-bridge
+npm install
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+🤝 Contribuer
+Les contributions sont les bienvenues ! Que vous soyez développeur, designer ou expert en gouvernance, vous pouvez aider à améliorer StreetBi.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+📢 Contact
+Auteur : Elhadji Gueye
 
-**Use GitHub Codespaces**
+Email : gueyeelhm@ept.sn
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/580c7107-a02f-447c-a42a-248347ef5337) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+LinkedIn / GitHub : [à compléter]
